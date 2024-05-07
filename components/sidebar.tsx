@@ -4,9 +4,11 @@ import classNames from "classnames";
 import Image from "next/image";
 import { SideBarMenuItem } from "./sidebar-menu-item";
 import SideBarMenuGroup from "./sidebar-menu-group";
+import { useAuthContext } from "@/AuthContext";
 
 export default function Sidebar() {
   const { toggleCollapse } = useSidebarToggle();
+  const { user } = useAuthContext();
 
   const asideStyle = classNames(
     "sidebar overflow-y-auto fixed bg-[#31353d] text-grey-500 z-50 h-full shadow-lg shadow-grey-900/20 transition duration-300 ease-in-out w-[20rem]",
@@ -27,7 +29,7 @@ export default function Sidebar() {
         ></Image>
         {!toggleCollapse && (
           <h3 className="pl-2 font-bold text-2xl text-[#e6e9ee] min-w-max">
-            Test Dashboard
+            {user.email}
           </h3>
         )}
       </div>

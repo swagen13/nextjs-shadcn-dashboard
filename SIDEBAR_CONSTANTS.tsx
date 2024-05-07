@@ -4,6 +4,7 @@ import {
   BsHouseDoor,
   BsKanban,
   BsListUl,
+  BsOutlet,
   BsPeople,
   BsQuestionCircle,
 } from "react-icons/bs";

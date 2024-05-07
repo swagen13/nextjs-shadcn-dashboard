@@ -1,15 +1,12 @@
-import Image from "next/image";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Overview } from "./components/overview";
 import { RecentSales } from "./components/recent-sales";
-import TaskPage from "@/components/task";
 
 export default function Home() {
   return (

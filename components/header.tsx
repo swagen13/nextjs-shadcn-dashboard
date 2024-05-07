@@ -1,9 +1,13 @@
 import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
 import classNames from "classnames";
 import { BsList } from "react-icons/bs";
+import { Button } from "./ui/button";
+import { getAuth, signOut } from "firebase/auth";
+import { firebase_app } from "@/firebaseConfig";
 
 export default function Header() {
   const { toggleCollapse, invokerToggleCallapse } = useSidebarToggle();
+  const auth = getAuth(firebase_app);
 
   const sideBarToggle = () => {
     invokerToggleCallapse();
@@ -16,17 +20,33 @@ export default function Header() {
       ["sm:pl-[20rem]"]: !toggleCollapse,
     }
   );
+
+  function LogOut() {
+    // log out from firebase
+    signOut(auth);
+
+    // then redirect to login page
+  }
+
   return (
     <header className={headerStyle}>
       <div className="flex items-center justify-between h-16">
-        <button
-          onClick={sideBarToggle}
-          className="order-2 sm:order-1 bg-[#3a3f48] text-[#6e768e] hover:bg-white ml-3 rounded-md h-[30px] w-[30px] shadow-md shadow-black/10 transition duration-300 ease-in-out flex items-center justify-center"
-        >
-          <BsList></BsList>
-        </button>
+        {/* sidebar toggle button */}
+        <Button onClick={sideBarToggle} className="text-white hover:bg-white">
+          <BsList className="text-white hover:text-black" size={24}></BsList>
+        </Button>
+
         <div className="order-1 sm:order-2 h-10 w-10 rounded-full bg-[#3a3f48] flex items-center justify-center text-center">
-          <span className="font-semibold text-sm">SR</span>
+          {/* log out button */}
+          <Button
+            className="text-white hover:bg-white mr-6"
+            onClick={() => {
+              LogOut();
+            }}
+          >
+            Log Out
+          </Button>
+          {/* <span className="font-semibold text-sm">SR</span> */}
         </div>
       </div>
     </header>
