@@ -1,37 +1,40 @@
-import { useSidebarToggle } from '@/hooks/use-sidebar-toggle';
-import classNames from 'classnames';
-import { BsList } from 'react-icons/bs';
-import { Button } from './ui/button';
-import { getAuth, signOut } from 'firebase/auth';
-import { firebase_app } from '@/firebaseConfig';
-import useSignOut from '@/hooks/signout';
+"use client";
+import { auth } from "@/firebaseConfig";
+import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
+import classNames from "classnames";
+import { signOut } from "firebase/auth";
+import { signOut as signOutSession } from "next-auth/react";
+import { BsList } from "react-icons/bs";
+import { Button } from "./ui/button";
+
+// import useSignOut from "@/hooks/signout";
 
 export default function Header() {
   const { toggleCollapse, invokerToggleCallapse } = useSidebarToggle();
-  const auth = getAuth(firebase_app);
-  const { removeSession, result, error } = useSignOut();
+
+  // const { removeSession, result, error } = useSignOut();
 
   const sideBarToggle = () => {
     invokerToggleCallapse();
   };
 
   const headerStyle = classNames(
-    'fixed bg-[#31353d] w-full z-0 px-4 shadow-sm shadow-slate-500/40 ',
+    "fixed bg-[#31353d] w-full z-0 px-4 shadow-sm shadow-slate-500/40 ",
     {
-      ['sm:pl-[5.6rem]']: toggleCollapse,
-      ['sm:pl-[20rem]']: !toggleCollapse,
+      ["sm:pl-[5.6rem]"]: toggleCollapse,
+      ["sm:pl-[20rem]"]: !toggleCollapse,
     }
   );
 
-  function LogOut() {
+  async function LogOut() {
     // log out from firebase
-    signOut(auth);
+    await signOut(auth);
 
-    // remove user session
-    removeSession();
+    // log out from session
+    await signOutSession();
 
     // redirect to login page
-    window.location.href = '/signin';
+    window.location.href = "/";
   }
 
   return (

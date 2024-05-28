@@ -1,10 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -13,23 +8,38 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import Link from "next/link";
-import Swal from "sweetalert2";
-import { Button } from "@/components/ui/button";
-import { deleteUser } from "@/pages/api/action";
+import { useEffect, useState } from "react";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  onDeleteUser: (id: string) => void;
+  onDeleteSkill: (id: string) => void;
 }
 
-export function DataTable<TData, TValue>({
+export function SkillsDataTable<TData, TValue>({
   columns,
   data,
-  onDeleteUser,
+  onDeleteSkill,
 }: DataTableProps<TData, TValue>) {
   const [key, setKey] = useState(0); // State to force re-render
+  const pageSize = 10; // Number of rows per page
+  const [currentPage, setCurrentPage] = useState(0); // Current page index
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  // Calculate the range of data to display for the current page
+  const startIndex = currentPage * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, data.length);
+  const currentPageData = data.slice(startIndex, endIndex);
 
   useEffect(() => {
     // Update key to force re-render when data changes
@@ -40,25 +50,20 @@ export function DataTable<TData, TValue>({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   });
-
-  async function deleteUserSubmit(id: string) {
-    try {
-      const response = await deleteUser(id);
-      if (response.message === "User deleted successfully") {
-        console.log("User deleted successfully");
-      } else {
-        console.error("Error deleting user");
-      }
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      // Trigger error alert
-      alert("Error deleting user");
-    }
-  }
 
   return (
     <div className="rounded-md border">
+      <Input
+        placeholder="Filter skill..."
+        value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+        onChange={(event) =>
+          table.getColumn("name")?.setFilterValue(event.target.value)
+        }
+        className="max-w-sm"
+      />
       <Table key={key}>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -89,7 +94,11 @@ export function DataTable<TData, TValue>({
                   <TableCell key={cell.id}>
                     {index === columns.length - 1 ? (
                       <>
-                        <Link href={`/users/${row.getValue("id")}`}>
+                        <Link
+                          href={`/skills/${
+                            (row.original as { id: string }).id
+                          }`}
+                        >
                           <Button
                             size="sm"
                             className="mr-4 text-yellow-500"
@@ -103,8 +112,7 @@ export function DataTable<TData, TValue>({
                           className="mr-4 text-red-500"
                           variant={"outline"}
                           onClick={() => {
-                            deleteUserSubmit(row.getValue("id"));
-                            onDeleteUser(row.getValue("id")); // Call onDeleteUser when user is deleted
+                            onDeleteSkill((row.original as { id: string }).id); // Call onDeleteSkill when user is deleted
                           }}
                         >
                           Delete
@@ -126,6 +134,24 @@ export function DataTable<TData, TValue>({
           )}
         </TableBody>
       </Table>
+      <div className="flex justify-between p-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+        >
+          Next
+        </Button>
+      </div>
     </div>
   );
 }

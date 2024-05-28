@@ -28,8 +28,8 @@ export const SideBarMenuItem = ({ item }: { item: SideNavItem }) => {
         <div className="rounded-md min-w-[18px]">
           <a
             className={`${ddLinkStyle} ${
-              pathName.includes(item.path) ? activeLinkStyle : ""
-            }`}
+              item.path === pathName ? activeLinkStyle : ""
+            } ${toggleCollapse ? "justify-center" : ""}`}
             onClick={toggleSubMenu}
           >
             {item.icon}

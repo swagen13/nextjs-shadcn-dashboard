@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { UserData } from "@/app/data/schema";
 import Swal from "sweetalert2";
-import { getUserById, updateUser } from "../action";
+import { getUserById, updateUser } from "../../../pages/api/action";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

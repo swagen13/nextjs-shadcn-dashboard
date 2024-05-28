@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import imageCompression from "browser-image-compression";
 import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { UploadImage } from "../users/action";
+import { UploadImage } from "../../pages/api/action";
 import Swal from "sweetalert2";
 import Image from "next/image";
 

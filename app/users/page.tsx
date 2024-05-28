@@ -3,12 +3,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { customColumns } from "./data-table/column";
 import { DataTable } from "./data-table/dataTable";
-import { deleteUser, getUsers } from "./action";
 import { UserData } from "../data/schema";
 import Swal from "sweetalert2";
 import { Button } from "@/components/ui/button";
 import { initializeApp } from "firebase/app";
 import firebaseConfig from "../../firebaseConfig";
+import { deleteUser, getUsers } from "@/pages/api/action";
 
 const UserPage = () => {
   const [userData, setUserData] = useState([] as UserData[]);

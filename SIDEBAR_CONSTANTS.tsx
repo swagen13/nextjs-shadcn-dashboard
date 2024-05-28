@@ -1,12 +1,8 @@
 import {
-  BsEnvelope,
-  BsGear,
   BsHouseDoor,
-  BsKanban,
-  BsListUl,
-  BsOutlet,
   BsPeople,
-  BsQuestionCircle,
+  BsPersonLinesFill,
+  BsSliders,
 } from "react-icons/bs";
 import { SideNavItemGroup } from "./types/types";
 
@@ -25,51 +21,35 @@ export const SIDENAV_ITEM: SideNavItemGroup[] = [
     title: "Manage",
     menuList: [
       {
-        title: "Products",
-        path: "/products",
-        icon: <BsKanban size={20} />,
+        title: "Skills",
+        path: "/skills",
+        icon: <BsSliders size={20} />,
         submenu: true,
         subMenuItems: [
           {
-            title: "All",
-            path: "/products",
+            title: "Skills",
+            path: "/skills",
           },
           {
-            title: "New",
-            path: "/products/new",
+            title: "Sub Skill",
+            path: "/subSkill",
+          },
+          {
+            title: "Children Skill",
+            path: "/childrenSkill",
           },
         ],
       },
-      {
-        title: "Orders",
-        path: "/orders",
-        icon: <BsListUl size={20} />,
-      },
-      {
-        title: "Feedbacks",
-        path: "/feedbacks",
-        icon: <BsEnvelope size={20} />,
-      },
+
       {
         title: "Users",
         path: "/users",
         icon: <BsPeople size={20} />,
       },
-    ],
-  },
-
-  {
-    title: "Others",
-    menuList: [
       {
-        title: "Account",
-        path: "/account",
-        icon: <BsGear size={20} />,
-      },
-      {
-        title: "Help",
-        path: "/help",
-        icon: <BsQuestionCircle size={20} />,
+        title: "Profile",
+        path: "/profile",
+        icon: <BsPersonLinesFill size={20} />,
       },
     ],
   },

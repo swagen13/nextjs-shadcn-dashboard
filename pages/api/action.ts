@@ -1,11 +1,36 @@
 "use server";
 
 import { put } from "@vercel/blob";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  getFirestore,
+} from "firebase/firestore";
+import { File } from "formdata-node";
+import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
 import postgres, { PostgresError } from "postgres";
 import { z } from "zod";
-import { UserData } from "../data/schema";
-import { File } from "formdata-node";
+import { UserData } from "../../app/data/schema";
+import { config } from "./auth/[...nextauth]";
+import { initAdmin } from "@/firebaseAdmin"; // Import initAdmin function
+
+interface User {
+  createdAt: string;
+  disabled: boolean;
+  displayName: string;
+  email: string;
+  emailVerified: boolean;
+  lastLoginAt: string;
+  phoneNumber: string;
+  photoURL: string;
+  providerEmail: string;
+  providerId: string;
+  providerUid: string;
+  uid: string;
+}
 
 let sql = postgres(process.env.DATABASE_URL || process.env.POSTGRES_URL!, {
   ssl: "allow",
@@ -85,6 +110,136 @@ export async function createUser(
 
     // Return an error response
     return { message: errors.message, status: false };
+  }
+}
+
+export async function getUserData(email: string) {
+  try {
+    console.log("email:", email);
+
+    const db = getFirestore();
+
+    let user: any;
+
+    const usersCollection = collection(db, "users");
+
+    const usersSnapshot = await getDocs(usersCollection);
+
+    usersSnapshot.forEach((doc) => {
+      if (doc.data().email === email) {
+        user = doc.data();
+      }
+    });
+
+    if (user) {
+      return {
+        id: user.uid,
+        username: user.username,
+      };
+    } else {
+      // If user not found, return null
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    return null;
+  }
+}
+
+export async function getUserProfile() {
+  const session = await getServerSession(config);
+  const adminApp = await initAdmin();
+  const userDoc = await adminApp
+    .firestore()
+    .collection("users")
+    .doc(session.user.id)
+    .get();
+
+  if (!userDoc.exists) {
+    console.log("User document not found for ID:", session.user.id);
+    return null;
+  }
+
+  // convert the userDoc data to the User schema
+  return userDoc.data() as User;
+}
+
+export async function updateUserProfile(
+  prevState: {
+    message: string;
+  },
+  formData: FormData
+) {
+  const schema = z.object({
+    uid: z.string(),
+    displayName: z.string(),
+    email: z.string(),
+    phoneNumber: z.string(),
+    image: z.instanceof(File).optional(),
+  });
+
+  const { uid, displayName, email, phoneNumber, image } = schema.parse(
+    Object.fromEntries(formData)
+  );
+
+  try {
+    const adminApp = await initAdmin();
+    const userDoc = adminApp.firestore().collection("users").doc(uid);
+
+    let photoURL;
+
+    // Check if an image is provided
+    if (image && image.size > 0) {
+      // Read the image buffer from FormData
+      const imageBuffer = await image.arrayBuffer();
+      const buffer = Buffer.from(imageBuffer);
+
+      // Compress the image (you should implement compressImage function)
+      const compressedImageBuffer = await compressImage(buffer);
+
+      // set file name
+      const fileName = `profileImage/${uid}/${image.name}-${Date.now()}`;
+
+      // Set reference to the storage bucket
+      const bucket = adminApp.storage().bucket().file(fileName);
+
+      // Upload the compressed image to the server
+      await bucket.save(compressedImageBuffer, {
+        metadata: {
+          contentType: image.type,
+        },
+      });
+
+      // Get the image URL
+      photoURL = await bucket.getSignedUrl({
+        action: "read",
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+      });
+
+      console.log("photoURL:", photoURL);
+    }
+
+    // Update the user document with the new data
+    if (photoURL) {
+      await userDoc.update({
+        displayName,
+        email,
+        phoneNumber,
+        photoURL,
+      });
+    } else {
+      await userDoc.update({
+        displayName,
+        email,
+        phoneNumber,
+      });
+    }
+
+    return { message: "User profile updated successfully" };
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+
+    return { message: "Error updating user profile" };
   }
 }
 
@@ -275,56 +430,22 @@ async function compressImage(imageBuffer: ArrayBuffer): Promise<Buffer> {
 
   return compressedImageBuffer;
 }
-// upload image data to server
-// export async function uploadImage(
-//   prevState: {
-//     message: string;
-//   },
-//   formData: FormData
-// ) {
-//   const schema = z.object({
-//     file: z.instanceof(File),
-//   });
 
-//   // upload image with blob
-//   const { file } = schema.parse(Object.fromEntries(formData));
+export async function getServerSideProps(config: any) {
+  const session = await getServerSession(config);
 
-//   try {
-//     console.log("Uploading image:", file.name);
+  if (!session) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
 
-//     // Save the image to the server
-//     const blob = await put(file.name, file, {
-//       access: "public",
-//       token: process.env.BLOB_READ_WRITE_TOKEN, // Provide the token here
-//     });
-
-//     // Revalidate the cache
-//     revalidatePath("/");
-
-//     return { message: "Image uploaded successfully", blob };
-//   } catch (error) {
-//     console.error("Error uploading image:", error);
-
-//     return { message: "Error uploading image" };
-//   }
-// }
-//create table
-// export async function createTable() {
-//   try {
-//     const result = await sql`
-// CREATE TABLE users (
-//   id BIGSERIAL PRIMARY KEY,
-//   username TEXT NOT NULL,
-//   email TEXT NOT NULL,
-//   password TEXT NOT NULL,
-//   image TEXT
-// )
-//       `;
-
-//     return { message: "Table created successfully" };
-//   } catch (error) {
-//     console.error("Error creating table:", error);
-
-//     return { message: "Error creating table" };
-//   }
-// }
+  return {
+    props: {
+      session,
+    },
+  };
+}

@@ -1,3 +1,4 @@
+"use client";
 import {
   Card,
   CardContent,
@@ -7,7 +8,6 @@ import {
 } from "@/components/ui/card";
 import { Overview } from "./components/overview";
 import { RecentSales } from "./components/recent-sales";
-
 export default function Home() {
   return (
     <>

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@next-auth/firebase-adapter": "^0.0.2-canary.207",
     "@radix-ui/react-avatar": "^1.0.4",
     "@radix-ui/react-checkbox": "^1.0.4",
     "@radix-ui/react-dialog": "^1.0.5",
@@ -29,10 +30,10 @@
     "clsx": "^2.1.0",
     "cmdk": "^1.0.0",
     "firebase": "^10.11.1",
+    "firebase-admin": "^12.1.0",
     "formdata-node": "^6.0.3",
     "lucide-react": "^0.372.0",
-    "next": "14.2.2",
-    "next-auth": "^4.24.7",
+    "next": "^14.2.3",
     "postgres": "^3.4.4",
     "react": "^18",
     "react-dom": "^18",
@@ -52,6 +53,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "postcss": "^8",
+    "server-only": "^0.0.1",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }

@@ -1,13 +1,11 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
-import { createUser } from "../action";
-import { useEffect, useRef, useState } from "react";
-import Swal from "sweetalert2";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PutBlobResult } from "@vercel/blob";
-import imageCompression from "browser-image-compression";
+import { createUser } from "@/pages/api/action";
+import { useEffect, useRef, useState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
+import Swal from "sweetalert2";
 
 const initialState = {
   message: "",
@@ -23,9 +21,12 @@ export function AddForm() {
   useEffect(() => {
     if (state.message) {
       if (state.status) {
+        console.log("state.message:", state.message);
+
         Swal.fire({
           title: state.message,
           icon: "success",
+          text: state.message,
         });
       } else {
         Swal.fire({
@@ -55,9 +56,6 @@ export function AddForm() {
 
   function SubmitButton() {
     const { pending } = useFormStatus();
-
-    //
-
     return (
       <Button
         type="submit"

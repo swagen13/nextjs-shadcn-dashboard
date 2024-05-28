@@ -1,25 +1,29 @@
-'use client';
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import SiginUpPage from '../signup/page';
-import useSignIn from '@/hooks/signin';
+"use client";
+import SiginUpPage from "@/app/signup/page";
+import useSignIn from "@/hooks/signin";
+import { useEffect, useState } from "react";
 
-function SignInPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+function SignInPage(BuildContext: any) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showModal, setShowModal] = useState(false); // State to manage modal visibility
-  const router = useRouter();
-  const { signIn, result, error } = useSignIn(email, password);
+  const { signInHandler, result, error } = useSignIn(email, password);
+
+  useEffect(() => {
+    const fetchSession = async () => {};
+    fetchSession();
+  }, []);
 
   const handleForm = async (event: { preventDefault: () => void }) => {
     event.preventDefault();
 
     try {
       // Call the signIn function from useSignIn hook
-      await signIn();
-      router.push('/');
+      await signInHandler();
+      // router.push("/");
     } catch (error) {
       console.log(error);
+      return false;
     }
   };
   const handleSignUpClick = () => {
@@ -91,10 +95,16 @@ function SignInPage() {
 
           <SiginUpPage setShowModal={setShowModal} />
         </div>
-      )}{' '}
+      )}{" "}
       {/* Render SignUpModal when showModal is true */}
     </div>
   );
+}
+
+interface ServerSidePropsWithSession {
+  props: {
+    session?: any; // Change 'any' to the actual type of your session object if known
+  };
 }
 
 export default SignInPage;
