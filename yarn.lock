@@ -3355,7 +3355,7 @@
   "resolved" "https://registry.npmjs.org/napi-build-utils/-/napi-build-utils-1.0.2.tgz"
   "version" "1.0.2"
 
-"next-auth@latest":
+"next-auth@^4.24.7", "next-auth@latest":
   "integrity" "sha512-iChjE8ov/1K/z98gdKbn2Jw+2vLgJtVV39X+rCP5SGnVQuco7QOr19FRNGMIrD8d3LYhHWV9j9sKLzq1aDWWQQ=="
   "resolved" "https://registry.npmjs.org/next-auth/-/next-auth-4.24.7.tgz"
   "version" "4.24.7"

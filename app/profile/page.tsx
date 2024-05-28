@@ -102,9 +102,11 @@ const ProfilePage = () => {
                     Photo
                   </label>
                   <img
-                    src={image}
-                    alt="user photo"
-                    className="w-40  rounded-md"
+                    src={image || "/avatars/image_blank.jpeg"}
+                    alt="User Avatar"
+                    className="rounded-md mx-auto min-h-fit"
+                    width={200}
+                    height={200}
                   />
                 </div>
                 <div className="mb-4 w-full px-2">
@@ -139,6 +141,7 @@ const ProfilePage = () => {
                   type="text"
                   id="displayName"
                   name="displayName"
+                  placeholder="Display Name"
                   value={user?.displayName || ""}
                   onChange={(e) =>
                     setUser((prevUser) =>
@@ -183,6 +186,7 @@ const ProfilePage = () => {
                   type="text"
                   id="phoneNumber"
                   name="phoneNumber"
+                  placeholder="Phone Number"
                   value={user?.phoneNumber || ""}
                   onChange={(e) =>
                     setUser((prevUser) =>
