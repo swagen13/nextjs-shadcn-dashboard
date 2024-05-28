@@ -1,16 +1,16 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { config } from "@/pages/api/auth/[...nextauth]";
 
 export async function middleware(req: NextRequest) {
   // Get the session token
-  const session = await getServerSession(config);
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+
+  console.log("Token:", token);
 
   // Check if the user is trying to access the signin page
   if (req.nextUrl.pathname === "/signin") {
     // If the user is logged in, redirect them to the dashboard
-    if (session) {
+    if (token) {
       console.log("User is logged in, redirecting to /dashboard");
       return NextResponse.redirect(new URL("/", req.url));
     }
@@ -39,7 +39,7 @@ export async function middleware(req: NextRequest) {
   console.log("Is protected route:", isProtectedRoute);
 
   // If the user is trying to access a protected route and is not authenticated
-  if (isProtectedRoute && !session) {
+  if (isProtectedRoute && !token) {
     console.log("User is not logged in, redirecting to /signin");
     return NextResponse.redirect(new URL("/signin", req.url));
   }
