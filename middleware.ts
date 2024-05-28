@@ -5,7 +5,9 @@ export async function middleware(req: NextRequest) {
   // Get the session token
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-  console.log("Token:", token);
+  console.error("token", token);
+
+  console.log("Request URL:", process.env.NEXTAUTH_SECRET);
 
   // Check if the user is trying to access the signin page
   if (req.nextUrl.pathname === "/signin") {
