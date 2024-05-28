@@ -3,11 +3,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import signUp from "./signup";
 
-function SiginUpPage({
-  setShowModal,
-}: {
-  setShowModal: (show: boolean) => void;
-}) {
+export default function SiginUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -41,7 +37,7 @@ function SiginUpPage({
               <button
                 type="button"
                 className="p-1 ml-auto bg-transparent border-0 text-black opacity-5 float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
-                onClick={() => setShowModal(false)}
+                // onClick={() => setShowModal(false)}
               >
                 <span className="text-black opacity-50">×</span>
               </button>
@@ -101,7 +97,7 @@ function SiginUpPage({
                 <div className="flex items-center justify-end">
                   <button
                     type="button"
-                    onClick={() => setShowModal(false)}
+                    // onClick={() => setShowModal(false)}
                     className="mr-4 bg-transparent hover:bg-gray-100 text-gray-700 font-semibold hover:text-gray-800 py-2 px-4 border border-gray-300 rounded focus:outline-none focus:shadow-outline"
                   >
                     Cancel
@@ -121,5 +117,3 @@ function SiginUpPage({
     </div>
   );
 }
-
-export default SiginUpPage;

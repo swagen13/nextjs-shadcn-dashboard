@@ -12,7 +12,7 @@ const initialState = {
   status: false,
 };
 
-export function AddForm() {
+export default function AddForm() {
   const [state, formAction] = useFormState(createUser, initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const [image, setImage] = useState<File | null>(null);
@@ -184,5 +184,3 @@ export function AddForm() {
     </div>
   );
 }
-
-export default AddForm;

@@ -10,7 +10,7 @@ const initialState = {
   status: false,
 };
 
-export function AddSkill() {
+export default function AddSkill() {
   const [state, formAction] = useFormState(createSkill, initialState);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -112,5 +112,3 @@ export function AddSkill() {
     </div>
   );
 }
-
-export default AddSkill;

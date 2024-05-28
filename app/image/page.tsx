@@ -14,7 +14,7 @@ const initialState = {
   status: false,
 };
 
-export function ImageUpload() {
+export default function ImageUpload() {
   const [state, formAction] = useFormState(UploadImage, initialState);
   const [image, setImage] = useState<File | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
@@ -147,5 +147,3 @@ export function ImageUpload() {
     </div>
   );
 }
-
-export default ImageUpload;

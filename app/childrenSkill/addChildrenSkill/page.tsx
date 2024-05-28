@@ -10,7 +10,7 @@ const initialState = {
   status: false,
 };
 
-export function AddChildrenSkill() {
+function AddChildrenSkill() {
   const [state, formAction] = useFormState(createSubSkill, initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const [subSkills, setSubSkills] = useState<any>([]);

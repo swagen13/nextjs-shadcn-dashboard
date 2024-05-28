@@ -1,5 +1,5 @@
 "use client";
-import SiginUpPage from "@/app/signup/page";
+// import SiginUpPage from "@/app/signup/page";
 import useSignIn from "@/hooks/signin";
 import { useEffect, useState } from "react";
 
@@ -89,14 +89,13 @@ function SignInPage(BuildContext: any) {
           </div>
         </form>
       </div>
-      {showModal && (
+      {/* {showModal && (
         <div>
           <div className="fixed inset-0 bg-black opacity-50"></div>
 
           <SiginUpPage setShowModal={setShowModal} />
         </div>
-      )}{" "}
-      {/* Render SignUpModal when showModal is true */}
+      )}{" "} */}
     </div>
   );
 }

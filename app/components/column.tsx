@@ -1,3 +1,5 @@
+// column.tsx
+
 // Define the type for the value types of the columns
 interface ColumnValueTypes {
   id: number;
@@ -28,3 +30,6 @@ const userColumns: ColumnDefinition[] = [
   },
   // Add more columns as needed
 ];
+
+// Export the columns
+export const columns = userColumns;
