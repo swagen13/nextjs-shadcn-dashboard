@@ -1,4 +1,4 @@
-import { getSkillParents } from "@/app/subSkill/action";
+"use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,24 +28,28 @@ import {
 } from "@tanstack/react-table";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getChildrenSkills, getSubSkillByParent } from "../action";
+import Swal from "sweetalert2";
+import {
+  deleteSubSkill,
+  getChildrenSkills,
+  getSubSkillByParent,
+} from "../action";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  onDeleteSubSkill: (id: string) => void;
+  parentSkills: any[];
 }
 
-export function SubSkillsDataTable<TData, TValue>({
+export function ChildrenSkillsDataTable<TData, TValue>({
   columns,
   data,
-  onDeleteSubSkill,
+  parentSkills,
 }: DataTableProps<TData, TValue>) {
   const [key, setKey] = useState(0); // State to force re-render
   const pageSize = 10; // Number of rows per page
   const [currentPage, setCurrentPage] = useState(0); // Current page index
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [parentSkills, setParentSkills] = useState<any[]>([]);
   const [parentSkillSelected, setparentSkillSelected] = useState<any>();
   const [subSkills, setSubSkills] = useState<any[]>([]);
 
@@ -53,12 +57,6 @@ export function SubSkillsDataTable<TData, TValue>({
   const startIndex = currentPage * pageSize;
   const endIndex = Math.min(startIndex + pageSize, data.length);
   const currentPageData = data.slice(startIndex, endIndex);
-
-  useEffect(() => {
-    getSkillParents().then((data) => {
-      setParentSkills(data);
-    });
-  }, []);
 
   useEffect(() => {
     const subskills = async () => {
@@ -101,6 +99,22 @@ export function SubSkillsDataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
   });
 
+  const onDeleteSubSkill = async (id: string) => {
+    try {
+      const response = await deleteSubSkill(id);
+      if (response.message === "Skill deleted successfully") {
+        console.log("Skill deleted successfully");
+
+        // Trigger success alert
+        Swal.fire("Skill deleted successfully", "", "success");
+      }
+    } catch (error) {
+      console.error("Error deleting skill:", error);
+      // Trigger error alert
+      Swal.fire("Error deleting skill", "", "error");
+    }
+  };
+
   return (
     <div className="rounded-md border">
       <div className="flex p-4">
@@ -125,7 +139,15 @@ export function SubSkillsDataTable<TData, TValue>({
               <SelectGroup>
                 {parentSkills.map((parentSkill) => (
                   <SelectItem key={parentSkill.id} value={parentSkill.parentId}>
-                    {parentSkill.name}
+                    {parentSkill.name}{" "}
+                    {parentSkill.children != "0" ? (
+                      <span className="text-sm text-gray-500">
+                        {" "}
+                        ({parentSkill.children})
+                      </span>
+                    ) : (
+                      ""
+                    )}
                   </SelectItem>
                 ))}
               </SelectGroup>
@@ -198,6 +220,7 @@ export function SubSkillsDataTable<TData, TValue>({
                     {index === columns.length - 1 ? (
                       <>
                         <Link
+                          rel="preload"
                           href={`/childrenSkill/${
                             (row.original as { id: string }).id
                           }`}

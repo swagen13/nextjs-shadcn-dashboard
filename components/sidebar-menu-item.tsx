@@ -52,6 +52,7 @@ export const SideBarMenuItem = ({ item }: { item: SideNavItem }) => {
                 {item.subMenuItems?.map((subItem, index) => {
                   return (
                     <Link
+                      rel="preload"
                       key={index}
                       href={subItem.path}
                       className={`${navMenuDropdownItem} ${
@@ -68,6 +69,7 @@ export const SideBarMenuItem = ({ item }: { item: SideNavItem }) => {
         </div>
       ) : (
         <Link
+          rel="preload"
           href={item.path}
           className={`${linkStyle} ${
             item.path === pathName ? activeLinkStyle : ""

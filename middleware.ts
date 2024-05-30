@@ -5,10 +5,6 @@ export async function middleware(req: NextRequest) {
   // Get the session token
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-  console.error("token", token);
-
-  console.log("Request URL:", process.env.NEXTAUTH_SECRET);
-
   // Check if the user is trying to access the signin page
   if (req.nextUrl.pathname === "/signin") {
     // If the user is logged in, redirect them to the dashboard
@@ -37,8 +33,6 @@ export async function middleware(req: NextRequest) {
     const regex = new RegExp(`^${route.replace(":path*", "(.*)?")}$`);
     return regex.test(req.nextUrl.pathname);
   });
-
-  console.log("Is protected route:", isProtectedRoute);
 
   // If the user is trying to access a protected route and is not authenticated
   if (isProtectedRoute && !token) {

@@ -12,9 +12,9 @@ import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
 import postgres, { PostgresError } from "postgres";
 import { z } from "zod";
+import { UserData } from "../data/schema";
 import { config } from "../../pages/api/auth/[...nextauth]";
 import { initAdmin } from "@/firebaseAdmin"; // Import initAdmin function
-import { UserData } from "@/app/data/schema";
 
 interface User {
   createdAt: string;
@@ -76,6 +76,17 @@ export async function createUser(
   const { username, email, password, image, imageResize } = schema.parse(
     Object.fromEntries(formData)
   );
+
+  const validatedFields = schema.safeParse({
+    email: formData.get("email"),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      message: validatedFields.error.errors[0].message,
+      status: false,
+    };
+  }
 
   try {
     // Execute the INSERT query to create a new user
@@ -292,12 +303,14 @@ export async function updateUser(
             RETURNING *
           `;
 
-    let imagePath = null;
-
     // Check if an image is provided
     if (image) {
       // Read the image buffer from FormData
       const imageBuffer = await image.arrayBuffer();
+
+      if (imageBuffer.byteLength == 0) {
+        return { message: "User updated successfully", status: true };
+      }
 
       console.log("imageBuffer:", imageBuffer);
 
@@ -329,12 +342,10 @@ export async function updateUser(
     }
 
     // Return the result as JSON
-    return { message: "User updated successfully" };
+    return { message: "User updated successfully", status: true };
   } catch (error) {
-    console.error("Error updating user:", error);
-
     // Return an error response
-    return { message: "Error updating user" };
+    return { message: "Error updating user", status: false };
   }
 }
 

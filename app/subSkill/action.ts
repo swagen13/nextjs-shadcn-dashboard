@@ -23,7 +23,7 @@ export async function getSubSkills() {
 }
 
 // get skill by id
-export async function getSkillById(id: string) {
+export async function getSubSkillById(id: string) {
   try {
     // get skill from firestore
     const adminApp = await initAdmin();

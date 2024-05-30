@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect } from "react";
 import {
   ColumnDef,
@@ -16,19 +17,18 @@ import {
 import Link from "next/link";
 import Swal from "sweetalert2";
 import { Button } from "@/components/ui/button";
-import { deleteUser } from "@/pages/api/action";
+import { deleteUser } from "../action";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  onDeleteUser: (id: string) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
-  onDeleteUser,
-}: DataTableProps<TData, TValue>) {
+}: // onDeleteUser,
+DataTableProps<TData, TValue>) {
   const [key, setKey] = useState(0); // State to force re-render
 
   useEffect(() => {
@@ -46,7 +46,11 @@ export function DataTable<TData, TValue>({
     try {
       const response = await deleteUser(id);
       if (response.message === "User deleted successfully") {
-        console.log("User deleted successfully");
+        Swal.fire({
+          title: response.message,
+          icon: "success",
+        });
+        // reload table
       } else {
         console.error("Error deleting user");
       }
@@ -89,7 +93,10 @@ export function DataTable<TData, TValue>({
                   <TableCell key={cell.id}>
                     {index === columns.length - 1 ? (
                       <>
-                        <Link href={`/users/${row.getValue("id")}`}>
+                        <Link
+                          rel="preload"
+                          href={`/users/${row.getValue("id")}`}
+                        >
                           <Button
                             size="sm"
                             className="mr-4 text-yellow-500"
@@ -104,7 +111,6 @@ export function DataTable<TData, TValue>({
                           variant={"outline"}
                           onClick={() => {
                             deleteUserSubmit(row.getValue("id"));
-                            onDeleteUser(row.getValue("id")); // Call onDeleteUser when user is deleted
                           }}
                         >
                           Delete

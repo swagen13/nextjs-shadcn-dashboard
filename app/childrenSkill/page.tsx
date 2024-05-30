@@ -1,47 +1,43 @@
-"use client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { deleteSubSkill, getChildrenSkills } from "./action";
+import { deleteSubSkill, getChildrenSkills, getSubSkills } from "./action";
 import { subSkillsColumns } from "./dataTable/column";
-import { SubSkillsDataTable } from "./dataTable/dataTable";
+import { ChildrenSkillsDataTable } from "./dataTable/dataTable";
+import { getSkillParents } from "../subSkill/action";
 
-const SkillsPage = () => {
-  const [subSkills, setsubSkills] = useState<any>([]);
+async function SkillsPage() {
+  const childrenSkills = await getChildrenSkills();
 
-  useEffect(() => {
-    getChildrenSkills().then((data) => {
-      setsubSkills(data);
-    });
-  }, []);
+  const subSkills = await getSubSkills();
 
-  const handleDeleteSubSkill = async (id: string) => {
-    try {
-      const response = await deleteSubSkill(id);
-      if (response.message === "Skill deleted successfully") {
-        console.log("Skill deleted successfully");
+  const parentSkills = await getSkillParents();
 
-        // Trigger success alert
-        Swal.fire("Skill deleted successfully", "", "success");
+  //get parent skills id
+  const parentSkillsId = parentSkills.map((skill) => skill.parentId);
 
-        // update skills state by filtering out the deleted skill
-        setsubSkills((prevData: any[]) =>
-          prevData.filter((skill) => skill.id !== id)
-        );
-      }
-    } catch (error) {
-      console.error("Error deleting skill:", error);
-      // Trigger error alert
-      Swal.fire("Error deleting skill", "", "error");
-    }
-  };
+  // get parent id from skills
+  const parentSkillsIdFromSkills = subSkills.map(
+    (subSkills) => subSkills.parentId
+  );
+
+  // get count of skills in parent skills
+  const parentSkillsCount = parentSkillsId.map((id) =>
+    parentSkillsIdFromSkills.filter((subSkills) => subSkills === id)
+  );
+
+  // merge count of skills in parent skills
+  const parentSkillsWithCount = parentSkills.map((skill, index) => ({
+    ...skill,
+    children: parentSkillsCount[index].length,
+  }));
 
   return (
     <div className="bg-gray-200 rounded-lg p-6 m-4">
       <div className="flex flex-row justify-between">
         <h1 className="text-2xl font-bold">Children Skill</h1>
-        <Link href="/childrenSkill/addChildrenSkill">
+        <Link rel="preload" href="/childrenSkill/addChildrenSkill">
           <Button
             size="sm"
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md"
@@ -51,15 +47,12 @@ const SkillsPage = () => {
         </Link>
       </div>
 
-      {/* Pass the handleDeletesub skill function to the DataTable component */}
-      {subSkills && (
-        <SubSkillsDataTable
-          data={subSkills}
-          columns={subSkillsColumns}
-          onDeleteSubSkill={handleDeleteSubSkill}
-        />
-      )}
+      <ChildrenSkillsDataTable
+        data={childrenSkills}
+        parentSkills={parentSkillsWithCount}
+        columns={subSkillsColumns}
+      />
     </div>
   );
-};
+}
 export default SkillsPage;

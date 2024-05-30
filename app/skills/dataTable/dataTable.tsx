@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,22 +20,21 @@ import {
 } from "@tanstack/react-table";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { deleteSkill } from "../action";
+import Swal from "sweetalert2";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  onDeleteSkill: (id: string) => void;
 }
 
 export function SkillsDataTable<TData, TValue>({
   columns,
   data,
-  onDeleteSkill,
 }: DataTableProps<TData, TValue>) {
   const [key, setKey] = useState(0); // State to force re-render
   const pageSize = 10; // Number of rows per page
   const [currentPage, setCurrentPage] = useState(0); // Current page index
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   // Calculate the range of data to display for the current page
   const startIndex = currentPage * pageSize;
@@ -54,16 +54,35 @@ export function SkillsDataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
   });
 
+  async function onDeleteSkill(id: string) {
+    try {
+      const response = await deleteSkill(id);
+      if (response.message === "Skill deleted successfully") {
+        console.log("Skill deleted successfully");
+
+        // Trigger success alert
+        Swal.fire("Skill deleted successfully", "", "success");
+      }
+    } catch (error) {
+      console.error("Error deleting skill:", error);
+      // Trigger error alert
+      Swal.fire("Error deleting skill", "", "error");
+    }
+  }
+
   return (
     <div className="rounded-md border">
-      <Input
-        placeholder="Filter skill..."
-        value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-        onChange={(event) =>
-          table.getColumn("name")?.setFilterValue(event.target.value)
-        }
-        className="max-w-sm"
-      />
+      <div className="flex p-4">
+        <Input
+          placeholder="Filter skill..."
+          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+          onChange={(event) =>
+            table.getColumn("name")?.setFilterValue(event.target.value)
+          }
+          className="max-w-sm mr-4"
+        />
+      </div>
+
       <Table key={key}>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -95,6 +114,7 @@ export function SkillsDataTable<TData, TValue>({
                     {index === columns.length - 1 ? (
                       <>
                         <Link
+                          rel="preload"
                           href={`/skills/${
                             (row.original as { id: string }).id
                           }`}

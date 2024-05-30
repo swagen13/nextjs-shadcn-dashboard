@@ -1,70 +1,28 @@
-"use client";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { getUsers } from "./action";
 import { customColumns } from "./data-table/column";
 import { DataTable } from "./data-table/dataTable";
-import { UserData } from "../data/schema";
-import Swal from "sweetalert2";
-import { Button } from "@/components/ui/button";
-import { initializeApp } from "firebase/app";
-import firebaseConfig from "../../firebaseConfig";
-import { deleteUser, getUsers } from "@/pages/api/action";
 
-const UserPage = () => {
-  const [userData, setUserData] = useState([] as UserData[]);
-
-  useEffect(() => {
-    const app = initializeApp(firebaseConfig);
-
-    getUsers().then((data) => {
-      setUserData(data);
-    });
-  }, []);
-
-  const handleDeleteUser = async (id: string) => {
-    try {
-      const response = await deleteUser(id);
-      if (response.message === "User deleted successfully") {
-        Swal.fire({
-          title: "User deleted successfully",
-          icon: "success",
-        });
-        // Update userData state by filtering out the deleted user
-        setUserData((prevData) => prevData.filter((user) => user.id !== id));
-      } else {
-        Swal.fire({
-          title: "Error deleting user",
-          icon: "error",
-        });
-      }
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      // Trigger error alert
-      alert("Error deleting user");
-    }
-  };
+async function UserPage() {
+  // get users from getUsers
+  const users = await getUsers();
 
   return (
-    <div className="bg-gray-200 rounded-lg p-6 m-4">
+    <div className="container mx-auto">
       <div className="flex flex-row justify-between">
-        <h1 className="text-2xl font-bold">Users</h1>
-        <Link href="/users/addUser">
+        <h1 className="text-3xl font-bold text-center mt-10">User Page</h1>
+        <Link rel="preload" href="/users/addUser">
           <Button
             size="sm"
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md"
           >
-            Add User
+            Create User
           </Button>
         </Link>
       </div>
-
-      {/* Pass the handleDeleteUser function to the DataTable component */}
-      <DataTable
-        data={userData}
-        columns={customColumns}
-        onDeleteUser={handleDeleteUser}
-      />
+      <DataTable data={users} columns={customColumns} />
     </div>
   );
-};
+}
 export default UserPage;

@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -31,34 +32,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Swal from "sweetalert2";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  onDeleteSubSkill: (id: string) => void;
+  parentSkills: any[];
 }
 
 export function SubSkillsDataTable<TData, TValue>({
   columns,
   data,
-  onDeleteSubSkill,
+  parentSkills,
 }: DataTableProps<TData, TValue>) {
   const [key, setKey] = useState(0); // State to force re-render
   const pageSize = 10; // Number of rows per page
   const [currentPage, setCurrentPage] = useState(0); // Current page index
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [parentSkills, setParentSkills] = useState<any[]>([]);
 
   // Calculate the range of data to display for the current page
   const startIndex = currentPage * pageSize;
   const endIndex = Math.min(startIndex + pageSize, data.length);
   const currentPageData = data.slice(startIndex, endIndex);
-
-  useEffect(() => {
-    getSkillParents().then((data) => {
-      setParentSkills(data);
-    });
-  }, []);
 
   useEffect(() => {
     // Update key to force re-render when data changes
@@ -72,6 +67,22 @@ export function SubSkillsDataTable<TData, TValue>({
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
+
+  const onDeleteSubSkill = async (id: string) => {
+    try {
+      const response = await deleteSubSkill(id);
+      if (response.message === "Skill deleted successfully") {
+        console.log("Skill deleted successfully");
+
+        // Trigger success alert
+        Swal.fire("Skill deleted successfully", "", "success");
+      }
+    } catch (error) {
+      console.error("Error deleting skill:", error);
+      // Trigger error alert
+      Swal.fire("Error deleting skill", "", "error");
+    }
+  };
 
   return (
     <div className="rounded-md border">
@@ -97,7 +108,15 @@ export function SubSkillsDataTable<TData, TValue>({
             <SelectGroup>
               {parentSkills.map((parentSkill) => (
                 <SelectItem key={parentSkill.id} value={parentSkill.parentId}>
-                  {parentSkill.name}
+                  {parentSkill.name}{" "}
+                  {parentSkill.children != "0" ? (
+                    <span className="text-sm text-gray-500">
+                      {" "}
+                      ({parentSkill.children})
+                    </span>
+                  ) : (
+                    ""
+                  )}
                 </SelectItem>
               ))}
             </SelectGroup>
@@ -136,6 +155,7 @@ export function SubSkillsDataTable<TData, TValue>({
                     {index === columns.length - 1 ? (
                       <>
                         <Link
+                          rel="preload"
                           href={`/subSkill/${
                             (row.original as { id: string }).id
                           }`}
