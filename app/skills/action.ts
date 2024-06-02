@@ -2,6 +2,7 @@
 
 import { initAdmin } from "@/firebaseAdmin";
 import { z } from "zod";
+import { SkillSchema } from "./schema";
 
 // get all skills information
 export async function getSkills() {
@@ -37,9 +38,6 @@ export async function getSkillById(id: string) {
 
 // update skill
 export async function updateSkill(
-  prevState: {
-    message: string;
-  },
   formData: FormData
 ) {
   const schema = z.object({
@@ -80,26 +78,11 @@ export async function updateSkill(
 }
 
 // create a new skill
-export async function createSkill(
-  prevState: {
-    message: string;
-  },
-  formData: FormData
-) {
-  const schema = z.object({
-    name: z.string(),
-    description: z.string(),
-    translationName: z.string(),
-  });
-  const { name, description, translationName } = schema.parse(
+export async function createSkill(formData: FormData) {
+  const { name, description, translationName } = SkillSchema.parse(
     Object.fromEntries(formData)
   );
-
-  const skill = {
-    name,
-    description,
-    translationName,
-  };
+  console.log("name", name);
 
   try {
     // create skill in firestore

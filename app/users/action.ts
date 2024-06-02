@@ -15,6 +15,8 @@ import { z } from "zod";
 import { UserData } from "../data/schema";
 import { config } from "../../pages/api/auth/[...nextauth]";
 import { initAdmin } from "@/firebaseAdmin"; // Import initAdmin function
+import { EditUserSchema, UserSchema, UserSchemaType } from "./schema";
+import { ProfileSchema } from "../profile/schema";
 
 interface User {
   createdAt: string;
@@ -57,36 +59,10 @@ export async function getUsers() {
   }
 }
 
-export async function createUser(
-  prevState: {
-    message: string;
-  },
-  formData: FormData
-) {
-  const schema = z.object({
-    username: z.string(),
-    email: z.string({
-      invalid_type_error: "Invalid Email",
-    }),
-    password: z.string(),
-    image: z.instanceof(File).optional(),
-    imageResize: z.instanceof(File).optional(),
-  });
-
-  const { username, email, password, image, imageResize } = schema.parse(
-    Object.fromEntries(formData)
+export async function createUser(data: FormData) {
+  const { username, email, password, image } = UserSchema.parse(
+    Object.fromEntries(data)
   );
-
-  const validatedFields = schema.safeParse({
-    email: formData.get("email"),
-  });
-
-  if (!validatedFields.success) {
-    return {
-      message: validatedFields.error.errors[0].message,
-      status: false,
-    };
-  }
 
   try {
     // Execute the INSERT query to create a new user
@@ -95,21 +71,15 @@ export async function createUser(
       VALUES (${username}, ${email}, ${password} )
       RETURNING *
     `;
-
     let imagePath = null;
-
     // Check if an image is provided
     if (image) {
       // Read the image buffer from FormData
       const imageBuffer = await image.arrayBuffer();
-
       console.log("imageBuffer:", imageBuffer);
-
       // Compress the image
       const compressedImageBuffer = await compressImage(imageBuffer);
-
       console.log("compressedImageBuffer:", compressedImageBuffer);
-
       // Upload the compressed image to the server
       const imagePath = await put(
         `images/${image.name}`,
@@ -121,10 +91,8 @@ export async function createUser(
           contentType: image.type,
         }
       );
-
       // Revalidate the cache
       revalidatePath("/");
-
       // Upload the image URL to the database
       await sql`
         UPDATE users
@@ -132,14 +100,11 @@ export async function createUser(
         WHERE id = ${result[0].id}
       `;
     }
-
     // Return the result as JSON
     return { message: "User created successfully", status: true };
   } catch (error) {
     const errors = error as PostgresError;
-
     console.error("Error creating user:", error);
-
     // Return an error response
     return { message: errors.message, status: false };
   }
@@ -196,21 +161,8 @@ export async function getUserProfile() {
   return userDoc.data() as User;
 }
 
-export async function updateUserProfile(
-  prevState: {
-    message: string;
-  },
-  formData: FormData
-) {
-  const schema = z.object({
-    uid: z.string(),
-    displayName: z.string(),
-    email: z.string(),
-    phoneNumber: z.string(),
-    image: z.instanceof(File).optional(),
-  });
-
-  const { uid, displayName, email, phoneNumber, image } = schema.parse(
+export async function updateUserProfile(formData: FormData) {
+  const { uid, displayName, email, phone, image } = ProfileSchema.parse(
     Object.fromEntries(formData)
   );
 
@@ -256,41 +208,28 @@ export async function updateUserProfile(
       await userDoc.update({
         displayName,
         email,
-        phoneNumber,
+        phoneNumber: phone,
         photoURL,
       });
     } else {
       await userDoc.update({
         displayName,
         email,
-        phoneNumber,
+        phoneNumber: phone,
       });
     }
 
-    return { message: "User profile updated successfully" };
+    return { message: "User profile updated successfully", status: true };
   } catch (error) {
     console.error("Error updating user profile:", error);
 
-    return { message: "Error updating user profile" };
+    return { message: "Error updating user profile", status: false };
   }
 }
 
 // update user information
-export async function updateUser(
-  prevState: {
-    message: string;
-  },
-  formData: FormData
-) {
-  const schema = z.object({
-    id: z.string(),
-    username: z.string(),
-    email: z.string(),
-    password: z.string(),
-    image: z.instanceof(File).optional(),
-  });
-
-  const { id, username, email, password, image } = schema.parse(
+export async function updateUser(formData: FormData) {
+  const { id, username, email, password, image } = EditUserSchema.parse(
     Object.fromEntries(formData)
   );
 
@@ -304,7 +243,7 @@ export async function updateUser(
           `;
 
     // Check if an image is provided
-    if (image) {
+    if (image == null) {
       // Read the image buffer from FormData
       const imageBuffer = await image.arrayBuffer();
 
@@ -344,6 +283,7 @@ export async function updateUser(
     // Return the result as JSON
     return { message: "User updated successfully", status: true };
   } catch (error) {
+    console.error("Error updating user:", error);
     // Return an error response
     return { message: "Error updating user", status: false };
   }

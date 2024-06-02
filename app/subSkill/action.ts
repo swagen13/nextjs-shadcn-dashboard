@@ -2,6 +2,7 @@
 
 import { initAdmin } from "@/firebaseAdmin";
 import { z } from "zod";
+import { SubSkillSchema } from "./schema";
 
 // get all skills information
 export async function getSubSkills() {
@@ -43,12 +44,7 @@ export async function getSubSkillById(id: string) {
 }
 
 // update skill
-export async function updateSubSkill(
-  prevState: {
-    message: string;
-  },
-  formData: FormData
-) {
+export async function updateSubSkill(formData: FormData) {
   const schema = z.object({
     id: z.string(),
     name: z.string(),
@@ -91,21 +87,9 @@ export async function updateSubSkill(
 }
 
 // create a new skill
-export async function createSubSkill(
-  prevState: {
-    message: string;
-  },
-  formData: FormData
-) {
-  const schema = z.object({
-    name: z.string(),
-    description: z.string(),
-    translationName: z.string(),
-    parentSkill: z.string(),
-  });
-  const { name, description, translationName, parentSkill } = schema.parse(
-    Object.fromEntries(formData)
-  );
+export async function createSubSkill(formData: FormData) {
+  const { name, description, translationName, parentSkill } =
+    SubSkillSchema.parse(Object.fromEntries(formData));
 
   try {
     // create skill in firestore

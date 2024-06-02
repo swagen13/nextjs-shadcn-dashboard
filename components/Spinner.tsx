@@ -1,11 +1,23 @@
-// components/Spinner.tsx
-export default function Spinner() {
+import React from "react";
+
+interface SpinnerProps {
+  size?: number; // Size in pixels
+}
+
+export default function Spinner({ size = 48 }: SpinnerProps) {
   return (
     <div className="flex justify-center items-center">
-      <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+      <div
+        className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200"
+        style={{
+          height: size,
+          width: size,
+          borderWidth: size / 12,
+          borderTopColor: "#3498db",
+        }}
+      ></div>
       <style jsx>{`
         .loader {
-          border-top-color: #3498db;
           -webkit-animation: spin 1s linear infinite;
           animation: spin 1s linear infinite;
         }

@@ -2,6 +2,7 @@
 
 import { initAdmin } from "@/firebaseAdmin";
 import { z } from "zod";
+import { EditChidrentSkillSchema } from "./schema";
 
 // get all skills information
 export async function getChildrenSkills() {
@@ -40,22 +41,9 @@ export async function getChildrenSkillById(id: string) {
 }
 
 // update skill
-export async function updateChildrenSkill(
-  prevState: {
-    message: string;
-  },
-  formData: FormData
-) {
-  const schema = z.object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string(),
-    translationName: z.string(),
-    subSkill: z.string(),
-  });
-  const { id, name, description, translationName, subSkill } = schema.parse(
-    Object.fromEntries(formData)
-  );
+export async function updateChildrenSkill(formData: FormData) {
+  const { id, name, description, translationName, subSkill } =
+    EditChidrentSkillSchema.parse(Object.fromEntries(formData));
 
   const skill = {
     name,
@@ -84,12 +72,7 @@ export async function updateChildrenSkill(
 }
 
 // create a new skill
-export async function createSubSkill(
-  prevState: {
-    message: string;
-  },
-  formData: FormData
-) {
+export async function createChildrenSkill(formData: FormData) {
   const schema = z.object({
     name: z.string(),
     description: z.string(),

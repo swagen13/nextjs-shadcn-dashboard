@@ -9,7 +9,7 @@ export default async function addChildrenSkillPage() {
       <div className="flex flex-row justify-between">
         <h1 className="text-2xl font-bold">Add Sub Skill</h1>
       </div>
-      <AddChildrenSkillForm subSkill={subSkills} />
+      <AddChildrenSkillForm subSkills={subSkills} />
     </div>
   );
 }
