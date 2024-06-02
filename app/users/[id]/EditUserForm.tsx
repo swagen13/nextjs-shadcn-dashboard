@@ -35,7 +35,7 @@ const initialState = {
   status: false,
 };
 
-export default function EditUserForm({ userData }: EditUserFormProps) {
+export default function EditUserForm({ userData }: any) {
   const formRef = useRef<HTMLFormElement>(null);
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(
