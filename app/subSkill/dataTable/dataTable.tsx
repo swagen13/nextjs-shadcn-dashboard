@@ -1,5 +1,15 @@
 "use client";
+import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -10,7 +20,6 @@ import {
 } from "@/components/ui/table";
 import {
   ColumnDef,
-  ColumnFiltersState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -18,21 +27,10 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { deleteSubSkill, getSkillParents } from "../action";
-import { Input } from "@/components/ui/input";
-
-import { ChevronDown } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import Swal from "sweetalert2";
+import { deleteSubSkill } from "../action";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -45,41 +43,84 @@ export function SubSkillsDataTable<TData, TValue>({
   data,
   parentSkills,
 }: DataTableProps<TData, TValue>) {
-  const [key, setKey] = useState(0); // State to force re-render
-  const pageSize = 10; // Number of rows per page
-  const [currentPage, setCurrentPage] = useState(0); // Current page index
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-
-  // Calculate the range of data to display for the current page
-  const startIndex = currentPage * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, data.length);
-  const currentPageData = data.slice(startIndex, endIndex);
-
-  useEffect(() => {
-    // Update key to force re-render when data changes
-    setKey((prevKey) => prevKey + 1);
-  }, [data]);
+  const [key, setKey] = useState(0);
+  const pageSize = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loadings, setLoadings] = useState(false);
+  const router = useRouter();
+  const [parentId, setParentId] = useState("");
+  const [name, setName] = useState("");
+  const [prevButton, setPrevButton] = useState(false);
+  const [nextButton, setNextButton] = useState(false);
 
   const table = useReactTable({
-    data,
+    data: data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    manualPagination: true,
+    pageCount: Math.ceil(data.length / pageSize),
   });
+
+  const handleFilterChange = (event: { target: { value: any } }) => {
+    setLoadings(true);
+    setName(event.target.value);
+    setCurrentPage(1);
+    if (event.target.value === "") {
+      router.push(`/subSkill?&parentId=${parentId}&page=1&limit=10`);
+      setLoadings(false);
+      return;
+    }
+    router.push(
+      `/subSkill?name=${event.target.value}&parentId=${parentId}&page=1&limit=10`
+    );
+    setLoadings(false);
+  };
+
+  const handleSelectChange = (value: any) => {
+    setLoadings(true);
+    setParentId(value);
+    setCurrentPage(1);
+    if (value !== "all") {
+      if (name === "") {
+        router.push(`/subSkill?parentId=${value}&page=1&limit=10`);
+        setLoadings(false);
+        return;
+      } else {
+        router.push(`/subSkill?name=${name}&parentId=${value}&page=1&limit=10`);
+        setLoadings(false);
+        return;
+      }
+    } else {
+      if (name === "") {
+        router.push(`/subSkill?page=1&limit=10`);
+        setLoadings(false);
+        return;
+      } else {
+        router.push(`/subSkill?name=${name}&page=1&limit=10`);
+        setLoadings(false);
+        return;
+      }
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    // Update the current page
+    setCurrentPage(newPage);
+    router.push(
+      `/subSkill?name=${name}&parentId=${parentId}&page=${newPage}&limit=10`
+    );
+  };
 
   const onDeleteSubSkill = async (id: string) => {
     try {
       const response = await deleteSubSkill(id);
       if (response.message === "Skill deleted successfully") {
-        console.log("Skill deleted successfully");
-
-        // Trigger success alert
         Swal.fire("Skill deleted successfully", "", "success");
       }
     } catch (error) {
       console.error("Error deleting skill:", error);
-      // Trigger error alert
       Swal.fire("Error deleting skill", "", "error");
     }
   };
@@ -89,33 +130,25 @@ export function SubSkillsDataTable<TData, TValue>({
       <div className="flex p-4">
         <Input
           placeholder="Filter skill..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
-          }
+          onChange={handleFilterChange}
           className="max-w-sm mr-4"
+          value={name}
         />
-        {/* dropdown for parent skill filter */}
-        <Select
-          onValueChange={(value) => {
-            table.getColumn("parentId")?.setFilterValue(value as string);
-          }}
-        >
+        <Select onValueChange={handleSelectChange}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by parent skill" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
+              <SelectItem value="all">Show All</SelectItem>
               {parentSkills.map((parentSkill) => (
                 <SelectItem key={parentSkill.id} value={parentSkill.parentId}>
-                  {parentSkill.name}{" "}
-                  {parentSkill.children != "0" ? (
+                  {parentSkill.name}
+                  {parentSkill.children !== "0" && (
                     <span className="text-sm text-gray-500">
                       {" "}
                       ({parentSkill.children})
                     </span>
-                  ) : (
-                    ""
                   )}
                 </SelectItem>
               ))}
@@ -143,8 +176,14 @@ export function SubSkillsDataTable<TData, TValue>({
             </TableRow>
           ))}
         </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows?.length ? (
+        <TableBody className="min-h-[300px]">
+          {loadings ? (
+            <TableRow>
+              <TableCell colSpan={columns.length} className="text-center">
+                <Spinner />
+              </TableCell>
+            </TableRow>
+          ) : table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
@@ -191,26 +230,27 @@ export function SubSkillsDataTable<TData, TValue>({
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">
-                No results.
+                No data found
               </TableCell>
             </TableRow>
           )}
         </TableBody>
       </Table>
+
       <div className="flex justify-between p-4">
         <Button
           variant="outline"
           size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
         >
           Previous
         </Button>
         <Button
           variant="outline"
           size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={data.length < pageSize}
         >
           Next
         </Button>

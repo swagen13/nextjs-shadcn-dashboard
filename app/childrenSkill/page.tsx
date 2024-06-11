@@ -1,11 +1,9 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import Swal from "sweetalert2";
-import { deleteSubSkill, getChildrenSkills, getSubSkills } from "./action";
+import { getSkillParents } from "../subSkill/action";
+import { getChildrenSkills, getSubSkills } from "./action";
 import { subSkillsColumns } from "./dataTable/column";
 import { ChildrenSkillsDataTable } from "./dataTable/dataTable";
-import { getSkillParents } from "../subSkill/action";
 
 async function SkillsPage() {
   const childrenSkills = await getChildrenSkills();

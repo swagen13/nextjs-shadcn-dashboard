@@ -448,3 +448,27 @@ export async function getServerSideProps(config: any) {
     },
   };
 }
+
+// get parent skills
+export async function getSubSkills() {
+  try {
+    // get skills from firestore
+    const adminApp = await initAdmin();
+    const skills = await adminApp
+      .firestore()
+      .collection("skillChildrens")
+      .get();
+
+    // return skills
+    return skills.docs.map((doc) => doc.data());
+  } catch (error) {
+    console.error("Error getting users:", error);
+
+    return [];
+  }
+}
+export async function getSubSkillByParent(parent: string) {
+  return getSubSkills().then((data) =>
+    data.filter((skill) => skill.parentId === parent)
+  );
+}

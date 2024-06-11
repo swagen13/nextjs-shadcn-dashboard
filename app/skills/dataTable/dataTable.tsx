@@ -22,6 +22,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { deleteSkill } from "../action";
 import Swal from "sweetalert2";
+import { useRouter } from "next/navigation";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -35,6 +36,9 @@ export function SkillsDataTable<TData, TValue>({
   const [key, setKey] = useState(0); // State to force re-render
   const pageSize = 10; // Number of rows per page
   const [currentPage, setCurrentPage] = useState(0); // Current page index
+  const [name, setName] = useState(""); // Filter value
+  const [loadings, setLoadings] = useState(false); // Loading state
+  const router = useRouter();
 
   // Calculate the range of data to display for the current page
   const startIndex = currentPage * pageSize;
@@ -70,16 +74,31 @@ export function SkillsDataTable<TData, TValue>({
     }
   }
 
+  const handleFilterChange = (event: { target: { value: any } }) => {
+    setLoadings(true);
+    setName(event.target.value);
+    setCurrentPage(1);
+    if (!event.target.value) {
+      router.push(`/skills?page=1&limit=10`);
+      return;
+    }
+    router.push(`/skills?name=${event.target.value}&page=1&limit=10`);
+    setLoadings(false);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    router.push(`/subSkill?name=${name}&page=${newPage}&limit=10`);
+  };
+
   return (
     <div className="rounded-md border">
       <div className="flex p-4">
         <Input
           placeholder="Filter skill..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
-          }
+          onChange={handleFilterChange}
           className="max-w-sm mr-4"
+          value={name}
         />
       </div>
 
@@ -158,16 +177,16 @@ export function SkillsDataTable<TData, TValue>({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
         >
           Previous
         </Button>
         <Button
           variant="outline"
           size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={data.length < pageSize}
         >
           Next
         </Button>

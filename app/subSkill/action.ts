@@ -1,5 +1,4 @@
 "use server";
-
 import { initAdmin } from "@/firebaseAdmin";
 import { z } from "zod";
 import { SubSkillSchema } from "./schema";
@@ -18,7 +17,6 @@ export async function getSubSkills() {
     return skills.docs.map((doc) => doc.data());
   } catch (error) {
     console.error("Error getting users:", error);
-
     return [];
   }
 }
@@ -38,8 +36,66 @@ export async function getSubSkillById(id: string) {
     return skill.data();
   } catch (error) {
     console.error("Error getting skill:", error);
-
     return null;
+  }
+}
+
+// get sub skill from parent skill
+export async function getSubSkillByParent(parentId?: string, page: number = 1) {
+  if (!page) page = 1;
+  let skills;
+
+  try {
+    // get skills from firestore
+    const adminApp = await initAdmin();
+    if (!parentId) {
+      console.log("no parent id");
+
+      skills = await adminApp
+        .firestore()
+        .collection("skillChildrens")
+        .limit(10)
+        .get();
+    } else {
+      console.log("parent id");
+      skills = await adminApp
+        .firestore()
+        .collection("skillChildrens")
+        .where("parentId", "==", parentId)
+        .limit(10)
+        .get();
+    }
+
+    // return skills
+    return skills.docs.map((doc) => doc.data());
+  } catch (error) {
+    console.error("Error getting skill:", error);
+    return [];
+  }
+}
+
+// get sub skill by name
+export async function getSubSkillByName(name: string) {
+  try {
+    // Convert the search query to lowercase for case-insensitive matching
+    const lowercaseName = name.toLowerCase();
+
+    // Get skills from Firestore
+    const adminApp = await initAdmin();
+    const skillsSnapshot = await adminApp
+      .firestore()
+      .collection("skillChildrens")
+      .get();
+
+    // Filter skills based on partial name match
+    const matchingSkills = skillsSnapshot.docs
+      .map((doc) => doc.data())
+      .filter((skill) => skill.name.toLowerCase().includes(lowercaseName));
+
+    return matchingSkills;
+  } catch (error) {
+    console.error("Error getting skill:", error);
+    return [];
   }
 }
 
@@ -81,7 +137,6 @@ export async function updateSubSkill(formData: FormData) {
     return { message: "Skill updated successfully", status: true };
   } catch (error) {
     console.error("Error updating skill:", error);
-
     return { message: "Error updating skill" };
   }
 }
@@ -126,7 +181,6 @@ export async function createSubSkill(formData: FormData) {
     return { message: "Skill created successfully", status: true };
   } catch (error) {
     console.error("Error creating skill:", error);
-
     return { message: "Error creating skill" };
   }
 }
@@ -142,7 +196,6 @@ export async function getSkillParents() {
     return skills.docs.map((doc) => doc.data());
   } catch (error) {
     console.error("Error getting users:", error);
-
     return [];
   }
 }
@@ -158,7 +211,6 @@ export async function deleteSubSkill(id: string) {
     return { message: "Skill deleted successfully", status: true };
   } catch (error) {
     console.error("Error deleting skill:", error);
-
     return { message: "Error deleting skill" };
   }
 }

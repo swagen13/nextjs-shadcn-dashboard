@@ -20,6 +20,45 @@ export async function getSkills() {
   }
 }
 
+export async function getSkillByName(name?: string, page: number = 1) {
+  if (!page) page = 1;
+
+  console.log("name", name, "page", page);
+
+  try {
+    if (name !== undefined) {
+      // get skills from firestore
+      const adminApp = await initAdmin();
+
+      // get skills from firestore , limit 10 from after page * 10
+      const skills = await adminApp
+        .firestore()
+        .collection("skills")
+        .where("name", "==", name)
+        .limit(page * 10)
+        .get();
+
+      // return skills
+      return skills.docs.map((doc) => doc.data());
+    } else {
+      // get skills from firestore , limit 10 from after page * 10
+      const adminApp = await initAdmin();
+      const skills = await adminApp
+        .firestore()
+        .collection("skills")
+        .limit(page * 10)
+        .get();
+
+      // return skills
+      return skills.docs.map((doc) => doc.data());
+    }
+  } catch (error) {
+    console.error("Error getting users:", error);
+
+    return [];
+  }
+}
+
 // get skill by id
 export async function getSkillById(id: string) {
   try {
@@ -37,9 +76,7 @@ export async function getSkillById(id: string) {
 }
 
 // update skill
-export async function updateSkill(
-  formData: FormData
-) {
+export async function updateSkill(formData: FormData) {
   const schema = z.object({
     id: z.string(),
     name: z.string(),

@@ -1,6 +1,6 @@
 import { getSkills } from "@/app/skills/action";
 import { getSubSkillById } from "../action";
-import EditSubSkillForm from "./EditSubSkill";
+import EditSubSkillForm from "./EditSubSkillForm";
 
 interface EditSkillPageProps {
   params: { id: string };

@@ -13,33 +13,33 @@ export default function Sidebar() {
   const { toggleCollapse } = useSidebarToggle();
   const [user, setUser] = useState<any>();
 
-  useEffect(() => {
-    getUserProfile().then((data) => {
-      setUser(data);
-    });
-  }, []);
+  // useEffect(() => {
+  //   getUserProfile().then((data) => {
+  //     setUser(data);
+  //   });
+  // }, []);
 
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
+  // useEffect(() => {
+  //   let unsubscribe: (() => void) | undefined;
 
-    if (user) {
-      const userDoc = doc(firestore, "users", user?.uid);
-      unsubscribe = onSnapshot(userDoc, (doc) => {
-        if (
-          doc.data()?.photoURL === user.photoURL ||
-          doc.data()?.displayName === user.displayName
-        )
-          return;
-        setUser(doc.data());
-      });
-    }
+  //   if (user) {
+  //     const userDoc = doc(firestore, "users", user?.uid);
+  //     unsubscribe = onSnapshot(userDoc, (doc) => {
+  //       if (
+  //         doc.data()?.photoURL === user.photoURL ||
+  //         doc.data()?.displayName === user.displayName
+  //       )
+  //         return;
+  //       setUser(doc.data());
+  //     });
+  //   }
 
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, [user]);
+  //   return () => {
+  //     if (unsubscribe) {
+  //       unsubscribe();
+  //     }
+  //   };
+  // }, [user]);
 
   const asideStyle = classNames(
     "sidebar overflow-y-auto fixed bg-[#31353d] text-grey-500 z-50 h-full shadow-lg shadow-grey-900/20 transition duration-300 ease-in-out w-[20rem]",

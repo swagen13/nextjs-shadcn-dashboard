@@ -1,25 +1,58 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { getSkillParents, getSubSkills } from "./action";
 import { skillsColumns } from "../skills/dataTable/column";
+import { getSkillParents, getSubSkillByParent, getSubSkills } from "./action";
 import { SubSkillsDataTable } from "./dataTable/dataTable";
 
-async function SkillsPage() {
-  const skills = await getSubSkills();
-  const parentSkills = await getSkillParents();
+interface SubSkillsPageProps {
+  searchParams: { [key: string]: string | string[] | undefined };
+}
 
-  //get parent skills id
+export default async function SubSkillsPage({
+  searchParams,
+}: SubSkillsPageProps) {
+  const parentId = Array.isArray(searchParams.parentId)
+    ? searchParams.parentId[0]
+    : searchParams.parentId;
+  const name = Array.isArray(searchParams.name)
+    ? searchParams.name[0]
+    : searchParams.name;
+  const limit = Array.isArray(searchParams.limit)
+    ? searchParams.limit[0]
+    : searchParams.limit;
+  const page = Array.isArray(searchParams.page)
+    ? searchParams.page[0]
+    : searchParams.page;
+
+  // // parse page params to number
+  const pageParam = parseInt(page as string);
+
+  // // Fetch skills and parent skills based on the search parameters
+  let subSkillFilter = await getSubSkillByParent(parentId, pageParam);
+  const parentSkills = await getSkillParents();
+  const subSkills = await getSubSkills();
+
+  // Filter skills by name if provided
+  if (name) {
+    subSkillFilter = subSkillFilter.filter((subSkillFilter) =>
+      subSkillFilter.name.toLowerCase().includes(name.toLowerCase())
+    );
+  }
+
+  // Get parent skills id
   const parentSkillsId = parentSkills.map((skill) => skill.parentId);
 
-  // get parent id from skills
-  const parentSkillsIdFromSkills = skills.map((skill) => skill.parentId);
-
-  // get count of skills in parent skills
-  const parentSkillsCount = parentSkillsId.map((id) =>
-    parentSkillsIdFromSkills.filter((skill) => skill === id)
+  // Get parent id from skills
+  const parentSkillsIdFromSkills = subSkills.map(
+    (subSkills) => subSkills.parentId
   );
 
-  // merge count of skills in parent skills
+  // Get count of skills in parent skills
+  const parentSkillsCount = parentSkillsId.map((id) =>
+    parentSkillsIdFromSkills.filter((subSkills) => subSkills === id)
+  );
+
+  // Merge count of skills in parent skills
   const parentSkillsWithCount = parentSkills.map((skill, index) => ({
     ...skill,
     children: parentSkillsCount[index].length,
@@ -39,11 +72,10 @@ async function SkillsPage() {
         </Link>
       </div>
       <SubSkillsDataTable
-        data={skills}
+        data={subSkillFilter}
         columns={skillsColumns}
         parentSkills={parentSkillsWithCount}
       />
     </div>
   );
 }
-export default SkillsPage;
