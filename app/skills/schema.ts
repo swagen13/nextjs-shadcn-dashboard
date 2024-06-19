@@ -7,7 +7,7 @@ export const SkillSchema = z.object({
   description: z.string().min(3, {
     message: "Description must be at least 3 characters long",
   }),
-  translationName: z.string().min(3, {
+  translationsname: z.string().min(3, {
     message: "Translation Name must be at least 3 characters long",
   }),
 });
@@ -22,7 +22,7 @@ export const EditSkillSchema = z.object({
   description: z.string().min(3, {
     message: "Description must be at least 3 characters long",
   }),
-  translationName: z.string().min(3, {
+  translationsname: z.string().min(3, {
     message: "Translation Name must be at least 3 characters long",
   }),
 });

@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { skillsColumns } from "../skills/dataTable/column";
-import { getSkillParents, getSubSkillByParent, getSubSkills } from "./action";
+import { getSkillsWithChildrenCount, getSubSkills } from "./action";
 import { SubSkillsDataTable } from "./dataTable/dataTable";
+import { skillsColumns } from "../skills/dataTable/column";
 
 interface SubSkillsPageProps {
   searchParams: { [key: string]: string | string[] | undefined };
@@ -27,36 +27,16 @@ export default async function SubSkillsPage({
   // // parse page params to number
   const pageParam = parseInt(page as string);
 
-  // // Fetch skills and parent skills based on the search parameters
-  let subSkillFilter = await getSubSkillByParent(parentId, pageParam);
-  const parentSkills = await getSkillParents();
-  const subSkills = await getSubSkills();
+  // const subSkills = getSubSkills();
 
-  // Filter skills by name if provided
-  if (name) {
-    subSkillFilter = subSkillFilter.filter((subSkillFilter) =>
-      subSkillFilter.name.toLowerCase().includes(name.toLowerCase())
-    );
-  }
-
-  // Get parent skills id
-  const parentSkillsId = parentSkills.map((skill) => skill.parentId);
-
-  // Get parent id from skills
-  const parentSkillsIdFromSkills = subSkills.map(
-    (subSkills) => subSkills.parentId
+  // fetch sub skills
+  const subSkills = await getSubSkills(
+    parentId as string,
+    pageParam,
+    name as string
   );
 
-  // Get count of skills in parent skills
-  const parentSkillsCount = parentSkillsId.map((id) =>
-    parentSkillsIdFromSkills.filter((subSkills) => subSkills === id)
-  );
-
-  // Merge count of skills in parent skills
-  const parentSkillsWithCount = parentSkills.map((skill, index) => ({
-    ...skill,
-    children: parentSkillsCount[index].length,
-  }));
+  const skillCount = await getSkillsWithChildrenCount();
 
   return (
     <div className="bg-gray-200 rounded-lg p-6 m-4">
@@ -72,9 +52,9 @@ export default async function SubSkillsPage({
         </Link>
       </div>
       <SubSkillsDataTable
-        data={subSkillFilter}
+        data={subSkills}
         columns={skillsColumns}
-        parentSkills={parentSkillsWithCount}
+        parentSkills={skillCount}
       />
     </div>
   );

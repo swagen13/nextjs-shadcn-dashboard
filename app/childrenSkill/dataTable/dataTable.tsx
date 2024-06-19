@@ -2,14 +2,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -19,7 +11,6 @@ import {
 } from "@/components/ui/table";
 import {
   ColumnDef,
-  ColumnFiltersState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -27,69 +18,35 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Swal from "sweetalert2";
-import {
-  deleteSubSkill,
-  getChildrenSkills,
-  getSubSkillByParent,
-} from "../action";
+import { deleteChildSkill } from "../action";
+import SkillFilter from "./skillFilter";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   parentSkills: any[];
+  subSkill?: any[];
 }
 
 export function ChildrenSkillsDataTable<TData, TValue>({
   columns,
   data,
   parentSkills,
+  subSkill,
 }: DataTableProps<TData, TValue>) {
   const [key, setKey] = useState(0); // State to force re-render
   const pageSize = 10; // Number of rows per page
   const [currentPage, setCurrentPage] = useState(0); // Current page index
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [parentSkillSelected, setparentSkillSelected] = useState<any>();
-  const [subSkills, setSubSkills] = useState<any[]>([]);
+  const [name, setName] = useState("");
+  const router = useRouter();
 
   // Calculate the range of data to display for the current page
   const startIndex = currentPage * pageSize;
   const endIndex = Math.min(startIndex + pageSize, data.length);
   const currentPageData = data.slice(startIndex, endIndex);
-
-  useEffect(() => {
-    const subskills = async () => {
-      const subSkill = await getSubSkillByParent(parentSkillSelected);
-
-      // get sub skills id
-      const subSkillsId = subSkill.map((skill: any) => skill.id);
-
-      // filter children skills by sub skills id
-      const childrenSkills = await getChildrenSkills();
-
-      const filteredChildrenSkills = childrenSkills.filter((skill: any) =>
-        subSkillsId.includes(skill.subSkillId)
-      );
-
-      // merge sub skills with children skills
-      const subSkillsWithChildren = subSkill.map((skill: any) => {
-        const children = filteredChildrenSkills.filter(
-          (child: any) => child.subSkillId === skill.id
-        );
-        return { ...skill, children: children.length };
-      });
-
-      setSubSkills(subSkillsWithChildren);
-    };
-
-    subskills();
-  }, [parentSkillSelected]);
-
-  useEffect(() => {
-    // Update key to force re-render when data changes
-    setKey((prevKey) => prevKey + 1);
-  }, [data]);
 
   const table = useReactTable({
     data,
@@ -99,9 +56,15 @@ export function ChildrenSkillsDataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
   });
 
+  const handleSelectChange = (value: any) => {
+    router.push(`/childrenSkill?&parentId=${value}&page=1&limit=10`);
+  };
+
+  const handleFilterChange = (event: { target: { value: any } }) => {};
+
   const onDeleteSubSkill = async (id: string) => {
     try {
-      const response = await deleteSubSkill(id);
+      const response = await deleteChildSkill(id);
       if (response.message === "Skill deleted successfully") {
         console.log("Skill deleted successfully");
 
@@ -120,73 +83,48 @@ export function ChildrenSkillsDataTable<TData, TValue>({
       <div className="flex p-4">
         <Input
           placeholder="Filter skill..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
-          }
+          value={name}
+          onChange={(event) => handleFilterChange}
           className="max-w-sm mr-4"
         />
-        <div className="mr-4">
-          <Select
-            onValueChange={(value) => {
-              setparentSkillSelected(value);
-            }}
-          >
+        <SkillFilter
+          parentSkills={parentSkills}
+          subSkill={subSkill && subSkill.length > 0 ? subSkill : undefined}
+          onSelectChange={handleSelectChange}
+        />
+        {/* <div className="mr-4">
+          <Select onValueChange={handleSelectChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by parent skill" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                {parentSkills.map((parentSkill) => (
-                  <SelectItem key={parentSkill.id} value={parentSkill.parentId}>
-                    {parentSkill.name}{" "}
-                    {parentSkill.children != "0" ? (
-                      <span className="text-sm text-gray-500">
-                        {" "}
-                        ({parentSkill.children})
-                      </span>
-                    ) : (
-                      ""
-                    )}
+                <SelectItem value="all">Show All</SelectItem>
+                {parentSkills.map((skill) => (
+                  <SelectItem key={skill.id} value={skill.parentid}>
+                    {skill.name} ({skill.children_count})
                   </SelectItem>
                 ))}
               </SelectGroup>
             </SelectContent>
           </Select>
         </div>
-        {
-          // If there is a selected parent skill, display the sub skills
-          parentSkillSelected && (
-            <Select
-              onValueChange={(value) => {
-                table.getColumn("subSkillId")?.setFilterValue(value as string);
-              }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by parent skill" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {subSkills.map((subSkill) => (
-                    <SelectItem key={subSkill.id} value={subSkill.id}>
-                      <div>
-                        {subSkill.name}
-                        {subSkill.children != "0" ? (
-                          <span className="text-sm text-gray-500">
-                            {" "}
-                            ({subSkill.children})
-                          </span>
-                        ) : (
-                          ""
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          )
-        }
+        {subSkill ? (
+          <Select onValueChange={(value) => {}}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by parent skill" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {subSkill.map((skill) => (
+                  <SelectItem key={skill.id} value={skill.id}>
+                    {skill.name} ({skill.children_count})
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        ) : null} */}
       </div>
 
       <Table key={key}>

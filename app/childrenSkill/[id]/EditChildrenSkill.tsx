@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import Swal from "sweetalert2";
-import { updateChildrenSkill } from "../action";
+// import { updateChildrenSkill } from "../action";
 import {
   Form,
   FormControl,
@@ -29,7 +29,7 @@ const initialState = {
 
 export default function EditChildrenSkillForm({
   childrenSkillData,
-  subSkills,
+  subskillid,
 }: any) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -39,8 +39,8 @@ export default function EditChildrenSkillForm({
       id: childrenSkillData.id.toString(),
       name: childrenSkillData.name,
       description: childrenSkillData.description || "",
-      translationName: childrenSkillData.translations[0].name,
-      subSkill: childrenSkillData.subSkillId,
+      translationsname: childrenSkillData.translations[0].name,
+      subskillid: childrenSkillData.subskillid,
     },
   });
 
@@ -51,25 +51,25 @@ export default function EditChildrenSkillForm({
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("description", data.description);
-    formData.append("translationName", data.translationName);
-    formData.append("subSkill", data.subSkill);
+    formData.append("translationsname", data.translationsname);
+    formData.append("subskillid", data.subskillid);
     formData.append("id", data.id);
 
-    const response = await updateChildrenSkill(formData);
+    // const response = await updateChildrenSkill(formData);
 
-    if (response.status) {
-      Swal.fire({
-        title: "Skill added successfully",
-        icon: "success",
-      });
-      reset();
-      formRef.current?.reset();
-    } else {
-      Swal.fire({
-        title: "Error adding skill",
-        icon: "error",
-      });
-    }
+    // if (response.status) {
+    //   Swal.fire({
+    //     title: "Skill added successfully",
+    //     icon: "success",
+    //   });
+    //   reset();
+    //   formRef.current?.reset();
+    // } else {
+    //   Swal.fire({
+    //     title: "Error adding skill",
+    //     icon: "error",
+    //   });
+    // }
   });
 
   return (
@@ -109,12 +109,12 @@ export default function EditChildrenSkillForm({
               <div className="mb-4 w-full sm:w-1/2 px-2">
                 <FormField
                   control={form.control}
-                  name="translationName"
+                  name="translationsname"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Translation Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="translationName" {...field} />
+                        <Input placeholder="translationsname" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -122,7 +122,7 @@ export default function EditChildrenSkillForm({
                 />
                 <FormField
                   control={form.control}
-                  name="subSkill"
+                  name="subskillid"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Parent Skill</FormLabel>
@@ -132,7 +132,7 @@ export default function EditChildrenSkillForm({
                           className="block w-full mt-1  border-gray-900 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 "
                         >
                           <option value="">Select Parent Skill</option>
-                          {subSkills.map((skill: any) => (
+                          {subskillid.map((skill: any) => (
                             <option key={skill.id} value={skill.id}>
                               {skill.name}
                             </option>

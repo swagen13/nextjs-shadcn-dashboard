@@ -1,35 +1,60 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { getSkillParents } from "../subSkill/action";
-import { getChildrenSkills, getSubSkills } from "./action";
-import { subSkillsColumns } from "./dataTable/column";
+import { skillsColumns } from "../skills/dataTable/column";
+import { getSkillsWithChildrenCount } from "../subSkill/action";
+import { getChildrenSkills, getSubSkillsWithChildrenCount } from "./action";
 import { ChildrenSkillsDataTable } from "./dataTable/dataTable";
 
-async function SkillsPage() {
+interface ChildrenSkillsPageProps {
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
+export default async function ChildrenSkillsPage({
+  searchParams,
+}: ChildrenSkillsPageProps) {
+  const parentId = Array.isArray(searchParams.parentId)
+    ? searchParams.parentId[0]
+    : searchParams.parentId;
+  const name = Array.isArray(searchParams.name)
+    ? searchParams.name[0]
+    : searchParams.name;
+  const limit = Array.isArray(searchParams.limit)
+    ? searchParams.limit[0]
+    : searchParams.limit;
+  const page = Array.isArray(searchParams.page)
+    ? searchParams.page[0]
+    : searchParams.page;
+
+  let subSkill;
+
   const childrenSkills = await getChildrenSkills();
 
-  const subSkills = await getSubSkills();
+  const parentSkills = await getSkillsWithChildrenCount();
 
-  const parentSkills = await getSkillParents();
+  if (parentId) {
+    console.log("parent id", parentId);
 
-  //get parent skills id
-  const parentSkillsId = parentSkills.map((skill) => skill.parentId);
+    subSkill = await getSubSkillsWithChildrenCount(parentId as string);
+  }
 
-  // get parent id from skills
-  const parentSkillsIdFromSkills = subSkills.map(
-    (subSkills) => subSkills.parentId
-  );
+  // get parent skills id
+  // const parentSkillsId = parentSkills.map((skill) => skill.parentId);
 
-  // get count of skills in parent skills
-  const parentSkillsCount = parentSkillsId.map((id) =>
-    parentSkillsIdFromSkills.filter((subSkills) => subSkills === id)
-  );
+  // // get parent id from skills
+  // const parentSkillsIdFromSkills = subSkills.map(
+  //   (subSkills) => subSkills.parentId
+  // );
 
-  // merge count of skills in parent skills
-  const parentSkillsWithCount = parentSkills.map((skill, index) => ({
-    ...skill,
-    children: parentSkillsCount[index].length,
-  }));
+  // // get count of skills in parent skills
+  // const parentSkillsCount = parentSkillsId.map((id) =>
+  //   parentSkillsIdFromSkills.filter((subSkills) => subSkills === id)
+  // );
+
+  // // merge count of skills in parent skills
+  // const parentSkillsWithCount = parentSkills.map((skill, index) => ({
+  //   ...skill,
+  //   children: parentSkillsCount[index].length,
+  // }));
 
   return (
     <div className="bg-gray-200 rounded-lg p-6 m-4">
@@ -47,10 +72,10 @@ async function SkillsPage() {
 
       <ChildrenSkillsDataTable
         data={childrenSkills}
-        parentSkills={parentSkillsWithCount}
-        columns={subSkillsColumns}
+        columns={skillsColumns}
+        parentSkills={parentSkills}
+        subSkill={subSkill}
       />
     </div>
   );
 }
-export default SkillsPage;

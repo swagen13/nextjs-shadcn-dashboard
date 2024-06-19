@@ -13,16 +13,12 @@ export const skillsColumns: ColumnDef<any>[] = [
     header: "Description",
   },
   {
-    accessorKey: "color",
-    header: "Color",
-  },
-  {
-    accessorKey: "parentId",
-    header: "Parent Id",
-  },
-  {
-    accessorKey: "createdAt",
+    accessorKey: "createdat",
     header: "Created At",
+  },
+  {
+    accessorKey: "updatedat",
+    header: "Updated At",
   },
   {
     accessorKey: "actions",

@@ -1,155 +1,77 @@
 "use server";
-
-import { initAdmin } from "@/firebaseAdmin";
 import { z } from "zod";
-import { SkillSchema } from "./schema";
+import { EditSkillSchema, SkillSchema } from "./schema";
 
-// get all skills information
-export async function getSkills() {
-  try {
-    // get skills from firestore
-    const adminApp = await initAdmin();
-    const skills = await adminApp.firestore().collection("skills").get();
+// postgres connection
+import postgres from "postgres";
+let sql = postgres(process.env.DATABASE_URL || process.env.POSTGRES_URL!, {
+  ssl: "allow",
+});
 
-    // return skills
-    return skills.docs.map((doc) => doc.data());
-  } catch (error) {
-    console.error("Error getting users:", error);
-
-    return [];
-  }
-}
-
-export async function getSkillByName(name?: string, page: number = 1) {
+export async function getSkills(name: string | undefined, page: number) {
   if (!page) page = 1;
 
-  console.log("name", name, "page", page);
+  const limit = 10;
+  const offset = (page - 1) * limit;
 
   try {
-    if (name !== undefined) {
-      // get skills from firestore
-      const adminApp = await initAdmin();
-
-      // get skills from firestore , limit 10 from after page * 10
-      const skills = await adminApp
-        .firestore()
-        .collection("skills")
-        .where("name", "==", name)
-        .limit(page * 10)
-        .get();
-
-      // return skills
-      return skills.docs.map((doc) => doc.data());
-    } else {
-      // get skills from firestore , limit 10 from after page * 10
-      const adminApp = await initAdmin();
-      const skills = await adminApp
-        .firestore()
-        .collection("skills")
-        .limit(page * 10)
-        .get();
-
-      // return skills
-      return skills.docs.map((doc) => doc.data());
+    {
+      if (!name) {
+        const result = await sql`
+          SELECT
+            *
+          FROM
+            skills         
+          LIMIT
+            ${limit}
+          OFFSET
+            ${offset}
+        `;
+        return result;
+      } else {
+        const result = await sql`
+          SELECT
+            *
+          FROM
+            skills      
+            WHERE    
+            name ILIKE ${"%" + name + "%"}
+          LIMIT
+            ${limit}
+          OFFSET
+            ${offset}
+        `;
+        return result;
+      }
     }
   } catch (error) {
-    console.error("Error getting users:", error);
-
+    console.error("Error fetching subskills:", error);
     return [];
   }
 }
 
-// get skill by id
-export async function getSkillById(id: string) {
-  try {
-    // get skill from firestore
-    const adminApp = await initAdmin();
-    const skill = await adminApp.firestore().collection("skills").doc(id).get();
-
-    // return skill
-    return skill.data();
-  } catch (error) {
-    console.error("Error getting skill:", error);
-
-    return null;
-  }
-}
-
-// update skill
-export async function updateSkill(formData: FormData) {
-  const schema = z.object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string(),
-    translationName: z.string(),
-  });
-  const { id, name, description, translationName } = schema.parse(
+// addSkill a new skill
+export async function addSkill(formData: FormData) {
+  const { name, description, translationsname } = SkillSchema.parse(
     Object.fromEntries(formData)
   );
+
+  const id = Math.floor(Math.random() * 1000000);
 
   const skill = {
     name,
     description,
-    translations: [
-      {
-        locale: "en",
-        name: translationName,
-      },
-    ],
+    translationsname,
   };
 
-  console.log("skill", skill);
-
   try {
-    // update skill in firestore
-    const adminApp = await initAdmin();
-    await adminApp.firestore().collection("skills").doc(id).update(skill);
-
-    // return success message
-    return { message: "Skill updated successfully", status: true };
-  } catch (error) {
-    console.error("Error updating skill:", error);
-
-    return { message: "Error updating skill" };
-  }
-}
-
-// create a new skill
-export async function createSkill(formData: FormData) {
-  const { name, description, translationName } = SkillSchema.parse(
-    Object.fromEntries(formData)
-  );
-  console.log("name", name);
-
-  try {
-    // create skill in firestore
-    const adminApp = await initAdmin();
-    const skillId = adminApp.firestore().collection("skills").doc().id;
-
-    // format is 2023-01-20T07:22:57.586Z
-    const formattedDate = new Date().toISOString();
-
-    const skillObject = {
-      color: null,
-      createdAt: formattedDate,
-      description: description,
-      icon: null,
-      id: skillId,
-      name: name,
-      translations: [
-        {
-          locale: "en",
-          name: translationName,
-        },
-      ],
-      updatedAt: formattedDate,
-    };
-
-    await adminApp
-      .firestore()
-      .collection("skills")
-      .doc(skillId)
-      .set(skillObject);
+    await sql`
+      INSERT INTO
+        skills
+        (id,name, description, translationsname)
+      VALUES
+        (${id},${skill.name}, ${skill.description}, ${skill.translationsname})
+    `;
 
     // return success message
     return { message: "Skill created successfully", status: true };
@@ -160,18 +82,66 @@ export async function createSkill(formData: FormData) {
   }
 }
 
-// delete skill
-export async function deleteSkill(id: string) {
+// get skill by id
+export async function getSkillById(id: string) {
   try {
-    // delete skill from firestore
-    const adminApp = await initAdmin();
-    await adminApp.firestore().collection("skills").doc(id).delete();
+    const result = await sql`
+      SELECT
+        *
+      FROM
+        skills
+      WHERE
+        id = ${id}
+    `;
 
-    // return success message
-    return { message: "Skill deleted successfully" };
+    if (result.length) {
+      return result[0];
+    } else {
+      return { message: "Skill not found", status: false };
+    }
   } catch (error) {
-    console.error("Error deleting skill:", error);
+    console.error("Error fetching skill:", error);
+    return { message: "Error fetching skill" };
+  }
+}
 
-    return { message: "Error deleting skill" };
+// update skill by id
+export async function updateSkill(formData: FormData) {
+  const { id, name, description, translationsname } = EditSkillSchema.parse(
+    Object.fromEntries(formData)
+  );
+
+  try {
+    const result = await sql`
+      UPDATE
+        skills
+      SET
+        name = ${name},
+        description = ${description},
+        translationsname = ${translationsname}
+      WHERE
+        id = ${id}
+    `;
+
+    return { message: "Skill updated successfully", status: true };
+  } catch (error) {
+    console.error("Error updating skill:", error);
+    return { message: "Error updating skill" };
+  }
+}
+
+// get skills from skills table
+export async function getAllSkills() {
+  try {
+    const result = await sql`
+      SELECT
+        *
+      FROM
+        skills
+    `;
+    return result;
+  } catch (error) {
+    console.error("Error fetching skills:", error);
+    return [];
   }
 }

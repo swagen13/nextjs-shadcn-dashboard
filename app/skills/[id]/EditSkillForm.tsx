@@ -15,8 +15,8 @@ import { User } from "lucide-react";
 import { useRef } from "react";
 import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
-import { updateSkill } from "../action";
 import { EditSkillSchema, EditSkillSchemaType } from "../schema";
+import { updateSkill } from "../action";
 
 const initialState = {
   message: "",
@@ -31,8 +31,8 @@ export default function EditSkillForm({ skillData }: any) {
     defaultValues: {
       id: skillData.id.toString(),
       name: skillData.name,
-      description: skillData.description,
-      translationName: skillData.translations[0].name,
+      description: skillData.description ? skillData.description : "",
+      translationsname: skillData.translationsname,
     },
   });
 
@@ -43,7 +43,7 @@ export default function EditSkillForm({ skillData }: any) {
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("description", data.description);
-    formData.append("translationName", data.translationName);
+    formData.append("translationsname", data.translationsname);
     formData.append("id", data.id);
 
     const response = await updateSkill(formData);
@@ -100,7 +100,7 @@ export default function EditSkillForm({ skillData }: any) {
               <div className="mb-4 w-full sm:w-1/2 px-2">
                 <FormField
                   control={form.control}
-                  name="translationName"
+                  name="translationsname"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Translation Name</FormLabel>

@@ -1,4 +1,4 @@
-import { getSkills } from "@/app/skills/action";
+import { getAllSkills } from "@/app/skills/action";
 import { getSubSkillById } from "../action";
 import EditSubSkillForm from "./EditSubSkillForm";
 
@@ -8,8 +8,9 @@ interface EditSkillPageProps {
 
 export default async function EditSubSkillPage({ params }: EditSkillPageProps) {
   const subSkillData = await getSubSkillById(params.id);
+  console.log("subSkillData", subSkillData);
 
-  const parentSkill = await getSkills();
+  const parentSkill = await getAllSkills();
 
   if (!subSkillData) {
     return <div>Skill not found</div>;

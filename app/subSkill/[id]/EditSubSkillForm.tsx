@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import Swal from "sweetalert2";
-import { updateSubSkill } from "../action";
 import {
   Form,
   FormControl,
@@ -18,6 +17,7 @@ import { EditSubSkillSchema, EditSubSkillSchemaType } from "../schema";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/Spinner";
+import { updateSubSkill } from "../action";
 
 const initialState = {
   message: "",
@@ -33,8 +33,8 @@ export default function EditSubSkillForm({ subSkillData, parentSkill }: any) {
       id: subSkillData.id.toString(),
       name: subSkillData.name,
       description: subSkillData.description || "",
-      translationName: subSkillData.translations[0].name,
-      parentSkill: subSkillData.parentId,
+      translationsname: subSkillData.translationsname,
+      parentid: subSkillData.parentid,
     },
   });
 
@@ -45,9 +45,9 @@ export default function EditSubSkillForm({ subSkillData, parentSkill }: any) {
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("description", data.description);
-    formData.append("translationName", data.translationName);
+    formData.append("translationsname", data.translationsname);
     formData.append("id", data.id);
-    formData.append("parentSkill", data.parentSkill);
+    formData.append("parentid", data.parentid);
 
     const response = await updateSubSkill(formData);
 
@@ -102,12 +102,12 @@ export default function EditSubSkillForm({ subSkillData, parentSkill }: any) {
               <div className="mb-4 w-full sm:w-1/2 px-2">
                 <FormField
                   control={form.control}
-                  name="translationName"
+                  name="translationsname"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Translation Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="translationName" {...field} />
+                        <Input placeholder="translationsName" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -115,18 +115,17 @@ export default function EditSubSkillForm({ subSkillData, parentSkill }: any) {
                 />
                 <FormField
                   control={form.control}
-                  name="parentSkill"
+                  name="parentid"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Parent Skill</FormLabel>
                       <FormControl>
                         <select
+                          className="block w-full mt-1 border-gray-900 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10"
                           {...field}
-                          className="block w-full mt-1  border-gray-900 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 "
                         >
-                          <option value="">Select Parent Skill</option>
                           {parentSkill.map((skill: any) => (
-                            <option key={skill.id} value={skill.parentId}>
+                            <option key={skill.id} value={skill.parentid}>
                               {skill.name}
                             </option>
                           ))}

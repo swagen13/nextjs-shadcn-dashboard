@@ -9,8 +9,9 @@ export default async function addSubSkillPage() {
       <div className="flex flex-row justify-between">
         <h1 className="text-2xl font-bold">Add Sub Skill</h1>
       </div>
-      <AddSubSkillForm parentSkills={paretSkills} />
+      {paretSkills && paretSkills.length > 0 && (
+        <AddSubSkillForm parentSkill={paretSkills} />
+      )}
     </div>
   );
 }
- 

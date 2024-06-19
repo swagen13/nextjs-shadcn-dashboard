@@ -7,10 +7,10 @@ export const ChidrentSkillSchema = z.object({
   description: z.string().min(3, {
     message: "Description must be at least 3 characters long",
   }),
-  translationName: z.string().min(3, {
+  translationsname: z.string().min(3, {
     message: "Translation Name must be at least 3 characters long",
   }),
-  subSkill: z.string(),
+  subskillid: z.string(),
 });
 
 export type ChidrentSkillSchemaType = z.infer<typeof ChidrentSkillSchema>;
@@ -23,10 +23,10 @@ export const EditChidrentSkillSchema = z.object({
   description: z.string().min(3, {
     message: "Description must be at least 3 characters long",
   }),
-  translationName: z.string().min(3, {
+  translationsname: z.string().min(3, {
     message: "Translation Name must be at least 3 characters long",
   }),
-  subSkill: z.string(),
+  subskillid: z.string(),
 });
 
 export type EditChidrentSkillSchemaType = z.infer<

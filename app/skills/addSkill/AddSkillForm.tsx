@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRef } from "react";
 import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
-import { createSkill } from "../action";
+import { addSkill } from "../action";
 import { SkillSchema, SkillSchemaType } from "../schema";
 
 const initialState = {
@@ -29,7 +29,7 @@ export default function AddSkillForm() {
     defaultValues: {
       name: "",
       description: "",
-      translationName: "",
+      translationsname: "",
     },
   });
 
@@ -40,9 +40,9 @@ export default function AddSkillForm() {
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("description", data.description);
-    formData.append("translationName", data.translationName);
+    formData.append("translationsname", data.translationsname);
 
-    const response = await createSkill(formData);
+    const response = await addSkill(formData);
 
     if (response.status) {
       Swal.fire({
@@ -96,12 +96,12 @@ export default function AddSkillForm() {
               <div className="mb-4 w-full sm:w-1/2 px-2">
                 <FormField
                   control={form.control}
-                  name="translationName"
+                  name="translationsname"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Translation Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="translationName" {...field} />
+                        <Input placeholder="translationsname" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

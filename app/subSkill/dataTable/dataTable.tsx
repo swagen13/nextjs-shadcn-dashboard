@@ -31,6 +31,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { deleteSubSkill } from "../action";
+// import { deleteSubSkill } from "../action";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -50,8 +51,6 @@ export function SubSkillsDataTable<TData, TValue>({
   const router = useRouter();
   const [parentId, setParentId] = useState("");
   const [name, setName] = useState("");
-  const [prevButton, setPrevButton] = useState(false);
-  const [nextButton, setNextButton] = useState(false);
 
   const table = useReactTable({
     data: data,
@@ -108,9 +107,18 @@ export function SubSkillsDataTable<TData, TValue>({
   const handlePageChange = (newPage: number) => {
     // Update the current page
     setCurrentPage(newPage);
-    router.push(
-      `/subSkill?name=${name}&parentId=${parentId}&page=${newPage}&limit=10`
-    );
+    if (name === "") {
+      router.push(`/subSkill?parentId=${parentId}&page=${newPage}&limit=10`);
+    } else if (name === "" && parentId === "") {
+      router.push(`/subSkill?page=${newPage}&limit=10`);
+    } else {
+      router.push(
+        `/subSkill?name=${name}&parentId=${parentId}&page=${newPage}&limit=10`
+      );
+    }
+    // router.push(
+    //   `/subSkill?name=${name}&parentId=${parentId}&page=${newPage}&limit=10`
+    // );
   };
 
   const onDeleteSubSkill = async (id: string) => {
@@ -141,15 +149,9 @@ export function SubSkillsDataTable<TData, TValue>({
           <SelectContent>
             <SelectGroup>
               <SelectItem value="all">Show All</SelectItem>
-              {parentSkills.map((parentSkill) => (
-                <SelectItem key={parentSkill.id} value={parentSkill.parentId}>
-                  {parentSkill.name}
-                  {parentSkill.children !== "0" && (
-                    <span className="text-sm text-gray-500">
-                      {" "}
-                      ({parentSkill.children})
-                    </span>
-                  )}
+              {parentSkills.map((skill) => (
+                <SelectItem key={skill.id} value={skill.parentid}>
+                  {skill.name} ({skill.children_count})
                 </SelectItem>
               ))}
             </SelectGroup>

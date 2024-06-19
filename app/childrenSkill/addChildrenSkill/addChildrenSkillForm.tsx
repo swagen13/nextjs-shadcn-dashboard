@@ -1,5 +1,8 @@
 "use client";
-import { Button } from "@/components/ui/button";
+import React, { useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import Swal from "sweetalert2";
 import {
   Form,
   FormControl,
@@ -9,19 +12,32 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRef } from "react";
-import { useForm } from "react-hook-form";
-import Swal from "sweetalert2";
-import { createChildrenSkill } from "../action";
+import { Button } from "@/components/ui/button";
 import { ChidrentSkillSchema, ChidrentSkillSchemaType } from "../schema";
+import {
+  addChildSkill,
+  getChildrenSkillsBySubSkillId,
+  getSubSkillsWithChildrenCount,
+} from "../action";
+import SkillFilter from "./addChildSkillFilter";
+import { useRouter } from "next/navigation";
 
-const initialState = {
-  message: "",
-  status: false,
-};
+interface Skill {
+  id: string;
+  name: string;
+  parentid: string;
+  children_count: number;
+  childlevel: number;
+}
 
-export default function AddChildrenSkillForm({ subSkills }: any) {
+export default function AddChildrenSkillForm({
+  subskills,
+}: {
+  subskills: Skill[];
+}) {
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const router = useRouter();
+
   const formRef = useRef<HTMLFormElement>(null);
 
   const form = useForm<ChidrentSkillSchemaType>({
@@ -29,21 +45,22 @@ export default function AddChildrenSkillForm({ subSkills }: any) {
     defaultValues: {
       name: "",
       description: "",
-      translationName: "",
+      translationsname: "",
+      subskillid: "",
     },
   });
 
   const { handleSubmit, reset, formState } = form;
-  const { isSubmitting, isValid, errors } = formState;
+  const { isSubmitting } = formState;
 
   const onSubmit = handleSubmit(async (data) => {
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("description", data.description);
-    formData.append("translationName", data.translationName);
-    formData.append("subSkill", data.subSkill);
+    formData.append("translationsname", data.translationsname);
+    formData.append("subskillid", selectedSkills[selectedSkills.length - 1]);
 
-    const response = await createChildrenSkill(formData);
+    const response = await addChildSkill(formData);
 
     if (response.status) {
       Swal.fire({
@@ -59,6 +76,30 @@ export default function AddChildrenSkillForm({ subSkills }: any) {
       });
     }
   });
+
+  const handleSelectChange = (value: string) => {
+    setSelectedSkills((prev) => {
+      const updatedSkills = [...prev];
+      updatedSkills[selectedSkills.length - 1] = value; // Ensure the selected skill is updated correctly
+      if (
+        selectedSkills.length === 0 ||
+        selectedSkills[selectedSkills.length - 1] !== value
+      ) {
+        updatedSkills.push(value);
+      }
+      return updatedSkills;
+    });
+
+    // Only push a new route if a new skill is selected
+    if (selectedSkills[selectedSkills.length - 1] !== value) {
+      router.push(`/childrenSkill/addChildrenSkill?subSkillId=${value}`);
+    }
+  };
+
+  const fetchSubSkills = async (parentId: string): Promise<any[]> => {
+    const subSkills = await getChildrenSkillsBySubSkillId(parentId);
+    return subSkills;
+  };
 
   return (
     <Form {...form}>
@@ -97,12 +138,12 @@ export default function AddChildrenSkillForm({ subSkills }: any) {
               <div className="mb-4 w-full sm:w-1/2 px-2">
                 <FormField
                   control={form.control}
-                  name="translationName"
+                  name="translationsname"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Translation Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="translationName" {...field} />
+                        <Input placeholder="Translation Name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -110,22 +151,16 @@ export default function AddChildrenSkillForm({ subSkills }: any) {
                 />
                 <FormField
                   control={form.control}
-                  name="subSkill"
+                  name="subskillid"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Parent Skill</FormLabel>
                       <FormControl>
-                        <select
-                          {...field}
-                          className="block w-full mt-1  border-gray-900 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 "
-                        >
-                          <option value="">Select Parent Skill</option>
-                          {subSkills.map((skill: any) => (
-                            <option key={skill.id} value={skill.id}>
-                              {skill.name}
-                            </option>
-                          ))}
-                        </select>
+                        <SkillFilter
+                          parentSkills={subskills}
+                          fetchSubSkills={fetchSubSkills}
+                          onSelectChange={handleSelectChange}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -136,7 +171,6 @@ export default function AddChildrenSkillForm({ subSkills }: any) {
           </div>
 
           <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-            {/* reset button */}
             <Button
               type="reset"
               className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gray-600 text-base font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto sm:text-sm"

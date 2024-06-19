@@ -20,7 +20,7 @@ import {
 } from "@tanstack/react-table";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { deleteSkill } from "../action";
+// import { deleteSkill } from "../action";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 
@@ -58,21 +58,21 @@ export function SkillsDataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  async function onDeleteSkill(id: string) {
-    try {
-      const response = await deleteSkill(id);
-      if (response.message === "Skill deleted successfully") {
-        console.log("Skill deleted successfully");
+  // async function onDeleteSkill(id: string) {
+  //   try {
+  //     const response = await deleteSkill(id);
+  //     if (response.message === "Skill deleted successfully") {
+  //       console.log("Skill deleted successfully");
 
-        // Trigger success alert
-        Swal.fire("Skill deleted successfully", "", "success");
-      }
-    } catch (error) {
-      console.error("Error deleting skill:", error);
-      // Trigger error alert
-      Swal.fire("Error deleting skill", "", "error");
-    }
-  }
+  //       // Trigger success alert
+  //       Swal.fire("Skill deleted successfully", "", "success");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error deleting skill:", error);
+  //     // Trigger error alert
+  //     Swal.fire("Error deleting skill", "", "error");
+  //   }
+  // }
 
   const handleFilterChange = (event: { target: { value: any } }) => {
     setLoadings(true);
@@ -88,7 +88,7 @@ export function SkillsDataTable<TData, TValue>({
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
-    router.push(`/subSkill?name=${name}&page=${newPage}&limit=10`);
+    router.push(`/skills?name=${name}&page=${newPage}&limit=10`);
   };
 
   return (
@@ -151,7 +151,7 @@ export function SkillsDataTable<TData, TValue>({
                           className="mr-4 text-red-500"
                           variant={"outline"}
                           onClick={() => {
-                            onDeleteSkill((row.original as { id: string }).id); // Call onDeleteSkill when user is deleted
+                            // onDeleteSkill((row.original as { id: string }).id); // Call onDeleteSkill when user is deleted
                           }}
                         >
                           Delete
