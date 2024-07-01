@@ -1,14 +1,15 @@
 import { z } from "zod";
 
-export const SkillSchema = z.object({
+export const ChidrentSkillSchema = z.object({
   skill_name: z.string().min(3, {
     message: "Name must be at least 3 characters long",
   }),
+  parent_id: z.string(),
 });
 
-export type SkillSchemaType = z.infer<typeof SkillSchema>;
+export type ChidrentSkillSchemaType = z.infer<typeof ChidrentSkillSchema>;
 
-export const EditSkillSchema = z.object({
+export const EditChidrentSkillSchema = z.object({
   id: z.string(),
   name: z.string().min(3, {
     message: "Name must be at least 3 characters long",
@@ -19,6 +20,9 @@ export const EditSkillSchema = z.object({
   translationsname: z.string().min(3, {
     message: "Translation Name must be at least 3 characters long",
   }),
+  subskillid: z.string(),
 });
 
-export type EditSkillSchemaType = z.infer<typeof EditSkillSchema>;
+export type EditChidrentSkillSchemaType = z.infer<
+  typeof EditChidrentSkillSchema
+>;

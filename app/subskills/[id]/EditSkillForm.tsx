@@ -1,8 +1,6 @@
 "use client";
-
-import { useEffect, useRef, useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
-import Swal from "sweetalert2";
+import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -11,30 +9,30 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { EditSubSkillSchema, EditSubSkillSchemaType } from "../schema";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import Spinner from "@/components/Spinner";
-import { updateSubSkill } from "../action";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { User } from "lucide-react";
+import { useRef } from "react";
+import { useForm } from "react-hook-form";
+import Swal from "sweetalert2";
+import { EditSkillSchema, EditSkillSchemaType } from "../schema";
+import { updateSkill } from "../action";
 
 const initialState = {
   message: "",
   status: false,
 };
 
-export default function EditSubSkillForm({ subSkillData, parentSkill }: any) {
+export default function EditSkillForm({ skillData }: any) {
   const formRef = useRef<HTMLFormElement>(null);
 
-  const form = useForm<EditSubSkillSchemaType>({
-    resolver: zodResolver(EditSubSkillSchema),
+  const form = useForm<EditSkillSchemaType>({
+    resolver: zodResolver(EditSkillSchema),
     defaultValues: {
-      id: subSkillData.id.toString(),
-      name: subSkillData.name,
-      description: subSkillData.description || "",
-      translationsname: subSkillData.translationsname,
-      parentid: subSkillData.parentid,
+      id: skillData.id.toString(),
+      name: skillData.name,
+      description: skillData.description ? skillData.description : "",
+      translationsname: skillData.translationsname,
     },
   });
 
@@ -47,9 +45,8 @@ export default function EditSubSkillForm({ subSkillData, parentSkill }: any) {
     formData.append("description", data.description);
     formData.append("translationsname", data.translationsname);
     formData.append("id", data.id);
-    formData.append("parentid", data.parentid);
 
-    const response = await updateSubSkill(formData);
+    const response = await updateSkill(formData);
 
     if (response.status) {
       Swal.fire({
@@ -85,6 +82,7 @@ export default function EditSubSkillForm({ subSkillData, parentSkill }: any) {
                     </FormItem>
                   )}
                 />
+                {/* description */}
                 <FormField
                   control={form.control}
                   name="description"
@@ -107,29 +105,7 @@ export default function EditSubSkillForm({ subSkillData, parentSkill }: any) {
                     <FormItem>
                       <FormLabel>Translation Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="translationsName" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="parentid"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Parent Skill</FormLabel>
-                      <FormControl>
-                        <select
-                          className="block w-full mt-1 border-gray-900 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10"
-                          {...field}
-                        >
-                          {parentSkill.map((skill: any) => (
-                            <option key={skill.id} value={skill.parentid}>
-                              {skill.name}
-                            </option>
-                          ))}
-                        </select>
+                        <Input placeholder="Translation Name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -142,13 +118,14 @@ export default function EditSubSkillForm({ subSkillData, parentSkill }: any) {
           <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
             <Button
               type="submit"
+              disabled={!isValid}
               className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm disabled:opacity-50"
             >
               {isSubmitting ? (
                 <Spinner size={20} />
               ) : (
                 <div className="flex items-center justify-center">
-                  Update Subskill
+                  Update Skill
                 </div>
               )}
             </Button>

@@ -10,10 +10,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
-import { addSkill } from "../action";
+import { addSubSkill } from "../action";
 import { SkillSchema, SkillSchemaType } from "../schema";
 
 const initialState = {
@@ -21,13 +21,18 @@ const initialState = {
   status: false,
 };
 
-export default function AddSkillForm() {
+export default function AddSkillForm({ parentSkills }: any) {
+  useEffect(() => {
+    console.log("parentSkills", parentSkills);
+  }, [parentSkills]);
+
   const formRef = useRef<HTMLFormElement>(null);
 
   const form = useForm<SkillSchemaType>({
     resolver: zodResolver(SkillSchema),
     defaultValues: {
       skill_name: "",
+      parent_id: "",
     },
   });
 
@@ -35,10 +40,21 @@ export default function AddSkillForm() {
   const { isSubmitting, isValid, errors } = formState;
 
   const onSubmit = handleSubmit(async (data) => {
+    console.log("data", data);
+
+    if (data.parent_id === "") {
+      Swal.fire({
+        title: "Please select parent skill",
+        icon: "warning",
+      });
+
+      return;
+    }
     const formData = new FormData();
     formData.append("skill_name", data.skill_name);
+    formData.append("parent_id", data.parent_id);
 
-    const response = await addSkill(formData);
+    const response = await addSubSkill(formData);
 
     if (response.status) {
       Swal.fire({
@@ -76,6 +92,29 @@ export default function AddSkillForm() {
                   )}
                 />
               </div>
+              <FormField
+                control={form.control}
+                name="parent_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parent Skill</FormLabel>
+                    <FormControl>
+                      <select
+                        {...field}
+                        className="block w-full mt-1  border-gray-900 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 "
+                      >
+                        <option value="">Select Parent Skill</option>
+                        {parentSkills.map((skill: any) => (
+                          <option key={skill.id} value={skill.id}>
+                            {skill.skill_name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </div>
 

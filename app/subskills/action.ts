@@ -14,9 +14,9 @@ export async function getSkills() {
           SELECT
             *
           FROM
-            skillstest        
+            skillstest 
           WHERE
-            parent_id IS NULL
+            parent_id IS NULL            
         `;
     return result;
   } catch (error) {
@@ -25,22 +25,48 @@ export async function getSkills() {
   }
 }
 
+export async function getSubSkills(parentIds: string | any[]) {
+  if (parentIds.length === 0) return [];
+
+  try {
+    const result = await sql`
+      SELECT
+        *
+      FROM
+        skillstest
+      WHERE
+        parent_id IN  (SELECT parent_id FROM skillstest WHERE parent_id IS NOT NULL)
+    `;
+    return result;
+  } catch (error) {
+    console.error("Error fetching subskills:", error);
+    return [];
+  }
+}
+
+async function getSubSkillsByParentId(parent_id: string) {}
+
 // addSkill a new skill
-export async function addSkill(formData: FormData) {
-  const { skill_name } = SkillSchema.parse(Object.fromEntries(formData));
+export async function addSubSkill(formData: FormData) {
+  const { skill_name, parent_id } = SkillSchema.parse(
+    Object.fromEntries(formData)
+  );
 
   const skill = {
     skill_name,
+    parent_id,
     createdat: new Date(),
   };
+
+  console.log("skill", skill);
 
   try {
     await sql`
       INSERT INTO
         skillstest
-        (skill_name, createdat,updatedat)
+        (skill_name,parent_id, createdat,updatedat)
       VALUES
-        (${skill.skill_name}, ${skill.createdat},${skill.createdat})
+        (${skill.skill_name}, ${skill.parent_id}, ${skill.createdat},${skill.createdat})
     `;
 
     // return success message

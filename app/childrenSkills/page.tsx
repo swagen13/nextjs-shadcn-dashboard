@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { SkillsDataTable } from "./dataTable/dataTable";
-import { skillsColumns } from "./dataTable/column";
-import { getSkills } from "./action";
+import { getChildrenSkills, getSkills } from "./action";
+import { ChildrenSkillsDataTable } from "./dataTable/dataTable";
+import { childrenSkillsColumns } from "./dataTable/column";
 
 interface SkillsPageProps {
   searchParams: { [key: string]: string | string[] | undefined };
@@ -27,7 +27,7 @@ export default async function SkillsPage({ searchParams }: SkillsPageProps) {
     <div className="bg-gray-200 rounded-lg p-6 m-4">
       <div className="flex flex-row justify-between">
         <h1 className="text-2xl font-bold">Skills</h1>
-        <Link rel="preload" href="/skills/addSkill">
+        <Link rel="preload" href="/childrenSkills/addChildrenSkill">
           <Button
             size="sm"
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md"
@@ -36,7 +36,8 @@ export default async function SkillsPage({ searchParams }: SkillsPageProps) {
           </Button>
         </Link>
       </div>
-      <SkillsDataTable data={skills} columns={skillsColumns} />
+      {/* Pass skills to your data table or other components */}
+      {/* <ChildrenSkillsDataTable data={skills} columns={childrenSkillsColumns} /> */}
     </div>
   );
 }

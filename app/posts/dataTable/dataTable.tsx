@@ -30,19 +30,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { deleteSubSkill } from "../action";
 // import { deleteSubSkill } from "../action";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  parentSkills: any[];
 }
 
-export function SubSkillsDataTable<TData, TValue>({
+export function PostsDataTable<TData, TValue>({
   columns,
   data,
-  parentSkills,
 }: DataTableProps<TData, TValue>) {
   const [key, setKey] = useState(0);
   const pageSize = 10;
@@ -62,47 +59,47 @@ export function SubSkillsDataTable<TData, TValue>({
     pageCount: Math.ceil(data.length / pageSize),
   });
 
-  const handleFilterChange = (event: { target: { value: any } }) => {
-    setLoadings(true);
-    setName(event.target.value);
-    setCurrentPage(1);
-    if (event.target.value === "") {
-      router.push(`/subSkill?&parentId=${parentId}&page=1&limit=10`);
-      setLoadings(false);
-      return;
-    }
-    router.push(
-      `/subSkill?name=${event.target.value}&parentId=${parentId}&page=1&limit=10`
-    );
-    setLoadings(false);
-  };
+  // const handleFilterChange = (event: { target: { value: any } }) => {
+  //   setLoadings(true);
+  //   setName(event.target.value);
+  //   setCurrentPage(1);
+  //   if (event.target.value === "") {
+  //     router.push(`/subSkill?&parentId=${parentId}&page=1&limit=10`);
+  //     setLoadings(false);
+  //     return;
+  //   }
+  //   router.push(
+  //     `/subSkill?name=${event.target.value}&parentId=${parentId}&page=1&limit=10`
+  //   );
+  //   setLoadings(false);
+  // };
 
-  const handleSelectChange = (value: any) => {
-    setLoadings(true);
-    setParentId(value);
-    setCurrentPage(1);
-    if (value !== "all") {
-      if (name === "") {
-        router.push(`/subSkill?parentId=${value}&page=1&limit=10`);
-        setLoadings(false);
-        return;
-      } else {
-        router.push(`/subSkill?name=${name}&parentId=${value}&page=1&limit=10`);
-        setLoadings(false);
-        return;
-      }
-    } else {
-      if (name === "") {
-        router.push(`/subSkill?page=1&limit=10`);
-        setLoadings(false);
-        return;
-      } else {
-        router.push(`/subSkill?name=${name}&page=1&limit=10`);
-        setLoadings(false);
-        return;
-      }
-    }
-  };
+  // const handleSelectChange = (value: any) => {
+  //   setLoadings(true);
+  //   setParentId(value);
+  //   setCurrentPage(1);
+  //   if (value !== "all") {
+  //     if (name === "") {
+  //       router.push(`/subSkill?parentId=${value}&page=1&limit=10`);
+  //       setLoadings(false);
+  //       return;
+  //     } else {
+  //       router.push(`/subSkill?name=${name}&parentId=${value}&page=1&limit=10`);
+  //       setLoadings(false);
+  //       return;
+  //     }
+  //   } else {
+  //     if (name === "") {
+  //       router.push(`/subSkill?page=1&limit=10`);
+  //       setLoadings(false);
+  //       return;
+  //     } else {
+  //       router.push(`/subSkill?name=${name}&page=1&limit=10`);
+  //       setLoadings(false);
+  //       return;
+  //     }
+  //   }
+  // };
 
   const handlePageChange = (newPage: number) => {
     // Update the current page
@@ -121,21 +118,21 @@ export function SubSkillsDataTable<TData, TValue>({
     // );
   };
 
-  const onDeleteSubSkill = async (id: string) => {
-    try {
-      const response = await deleteSubSkill(id);
-      if (response.message === "Skill deleted successfully") {
-        Swal.fire("Skill deleted successfully", "", "success");
-      }
-    } catch (error) {
-      console.error("Error deleting skill:", error);
-      Swal.fire("Error deleting skill", "", "error");
-    }
-  };
+  // const onDeleteSubSkill = async (id: string) => {
+  //   try {
+  //     const response = await deleteSubSkill(id);
+  //     if (response.message === "Skill deleted successfully") {
+  //       Swal.fire("Skill deleted successfully", "", "success");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error deleting skill:", error);
+  //     Swal.fire("Error deleting skill", "", "error");
+  //   }
+  // };
 
   return (
     <div className="rounded-md border">
-      <div className="flex p-4">
+      {/* <div className="flex p-4">
         <Input
           placeholder="Filter skill..."
           onChange={handleFilterChange}
@@ -157,7 +154,7 @@ export function SubSkillsDataTable<TData, TValue>({
             </SelectGroup>
           </SelectContent>
         </Select>
-      </div>
+      </div> */}
 
       <Table key={key}>
         <TableHeader>
@@ -214,9 +211,9 @@ export function SubSkillsDataTable<TData, TValue>({
                           className="text-red-500"
                           variant={"outline"}
                           onClick={() => {
-                            onDeleteSubSkill(
-                              (row.original as { id: string }).id
-                            );
+                            // onDeleteSubSkill(
+                            //   (row.original as { id: string }).id
+                            // );
                           }}
                         >
                           Delete

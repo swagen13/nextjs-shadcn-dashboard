@@ -10,58 +10,61 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
-import { SubSkillSchema, SubSkillSchemaType } from "../schema";
-import { addSkill } from "../action";
+import { PostSchema, PostSchemaType } from "../scheme";
+import { useRouter } from "next/navigation";
+import { filterSkill } from "../action";
+import SkillFilter from "./addSkillFilter";
 
 const initialState = {
   message: "",
   status: false,
 };
 
-export default function AddSubSkillForm({ parentSkill }: any) {
+export default function AddPostForm({ parentSkill }: any, { path }: any) {
   const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
 
-  const form = useForm<SubSkillSchemaType>({
-    resolver: zodResolver(SubSkillSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      translationsname: "",
-      parentid: "",
-    },
+  const form = useForm<PostSchemaType>({
+    resolver: zodResolver(PostSchema),
+    defaultValues: {},
   });
 
   const { handleSubmit, reset, formState } = form;
   const { isSubmitting, isValid, errors } = formState;
 
-  const onSubmit = handleSubmit(async (data) => {
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("description", data.description);
-    formData.append("translationsname", data.translationsname);
-    formData.append("parentid", data.parentid);
+  const onSubmit = handleSubmit(async (data) => {});
 
-    const response = await addSkill(formData);
+  const handleSelectChange = (value: string) => {
+    setSelectedSkills((prev) => {
+      const updatedSkills = [...prev];
+      updatedSkills[selectedSkills.length - 1] = value; // Ensure the selected skill is updated correctly
+      if (
+        selectedSkills.length === 0 ||
+        selectedSkills[selectedSkills.length - 1] !== value
+      ) {
+        updatedSkills.push(value);
+      }
+      return updatedSkills;
+    });
 
-    console.log("response", response);
+    // Only push a new route if a new skill is selected
+    if (selectedSkills[selectedSkills.length - 1] !== value) {
+      console.log("path", path);
 
-    if (response.status) {
-      Swal.fire({
-        title: "Skill added successfully",
-        icon: "success",
-      });
-      reset();
-      formRef.current?.reset();
-    } else {
-      Swal.fire({
-        title: "Error adding skill",
-        icon: "error",
-      });
+      // get url from the current route
+      router.push(`/posts/addPost?skill=${value}`);
     }
-  });
+  };
+
+  const fetchSubSkills = async (parentId: string): Promise<any[]> => {
+    const response = await filterSkill(parentId);
+    return response;
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={onSubmit} className="flex flex-wrap -mx-2" ref={formRef}>
@@ -84,12 +87,12 @@ export default function AddSubSkillForm({ parentSkill }: any) {
                 />
                 <FormField
                   control={form.control}
-                  name="description"
+                  name="header"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description</FormLabel>
+                      <FormLabel>Header</FormLabel>
                       <FormControl>
-                        <Input placeholder="Description" {...field} />
+                        <Input placeholder="header" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -99,34 +102,61 @@ export default function AddSubSkillForm({ parentSkill }: any) {
               <div className="mb-4 w-full sm:w-1/2 px-2">
                 <FormField
                   control={form.control}
-                  name="translationsname"
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Translation Name</FormLabel>
+                      <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Input placeholder="translationsname" {...field} />
+                        <Input placeholder="description" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+              </div>
+              <div className="mb-4 w-full sm:w-1/2 px-2">
                 <FormField
                   control={form.control}
-                  name="parentid"
+                  name="wages"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Wages</FormLabel>
+                      <FormControl>
+                        <Input placeholder="wages" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="mb-4 w-full sm:w-1/2 px-2">
+                <FormField
+                  control={form.control}
+                  name="worker"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Worker</FormLabel>
+                      <FormControl>
+                        <Input placeholder="worker" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="mb-4 w-full sm:w-1/2 px-2">
+                <FormField
+                  control={form.control}
+                  name="skill"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Parent Skill</FormLabel>
                       <FormControl>
-                        <select
-                          {...field}
-                          className="block w-full mt-1  border-gray-900 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 "
-                        >
-                          {parentSkill.map((skill: any) => (
-                            <option key={skill.id} value={skill.parentid}>
-                              {skill.name}
-                            </option>
-                          ))}
-                        </select>
+                        <SkillFilter
+                          parentSkills={parentSkill}
+                          fetchSubSkills={fetchSubSkills}
+                          onSelectChange={handleSelectChange}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { SkillsDataTable } from "./dataTable/dataTable";
 import { skillsColumns } from "./dataTable/column";
-import { getSkills } from "./action";
+import { getSkills, getSubSkills } from "./action";
 
 interface SkillsPageProps {
   searchParams: { [key: string]: string | string[] | undefined };
@@ -23,11 +23,19 @@ export default async function SkillsPage({ searchParams }: SkillsPageProps) {
 
   const skills = await getSkills();
 
+  let subSkills: any;
+  if (skills.length > 0) {
+    const parentIds = skills.map((skill) => skill.id);
+    subSkills = await getSubSkills(parentIds);
+  }
+
+  console.log("subSkills", subSkills);
+
   return (
     <div className="bg-gray-200 rounded-lg p-6 m-4">
       <div className="flex flex-row justify-between">
         <h1 className="text-2xl font-bold">Skills</h1>
-        <Link rel="preload" href="/skills/addSkill">
+        <Link rel="preload" href="/subskills/addSubSkill">
           <Button
             size="sm"
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md"
@@ -36,7 +44,7 @@ export default async function SkillsPage({ searchParams }: SkillsPageProps) {
           </Button>
         </Link>
       </div>
-      <SkillsDataTable data={skills} columns={skillsColumns} />
+      <SkillsDataTable data={subSkills} columns={skillsColumns} />
     </div>
   );
 }

@@ -6,22 +6,18 @@ import { ColumnDef } from "@tanstack/react-table";
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
 
-export const subSkillsColumns: ColumnDef<any>[] = [
+export const childrenSkillsColumns: ColumnDef<any>[] = [
   {
-    accessorKey: "name",
+    accessorKey: "skill_name",
     header: "Name",
-  },
-  {
-    accessorKey: "description",
-    header: "Description",
   },
   {
     accessorKey: "color",
     header: "Color",
   },
   {
-    accessorKey: "children",
-    header: "Children",
+    accessorKey: "subSkillId",
+    header: "Sub Skill Id",
   },
   {
     accessorKey: "createdAt",

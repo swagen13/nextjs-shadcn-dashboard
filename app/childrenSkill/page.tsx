@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { skillsColumns } from "../skills/dataTable/column";
-import { getSkillsWithChildrenCount } from "../subSkill/action";
+
 import { getChildrenSkills, getSubSkillsWithChildrenCount } from "./action";
 import { ChildrenSkillsDataTable } from "./dataTable/dataTable";
 
@@ -29,7 +28,7 @@ export default async function ChildrenSkillsPage({
 
   const childrenSkills = await getChildrenSkills();
 
-  const parentSkills = await getSkillsWithChildrenCount();
+  // const parentSkills = await getSkillsWithChildrenCount();
 
   if (parentId) {
     console.log("parent id", parentId);
@@ -70,12 +69,12 @@ export default async function ChildrenSkillsPage({
         </Link>
       </div>
 
-      <ChildrenSkillsDataTable
+      {/* <ChildrenSkillsDataTable
         data={childrenSkills}
         columns={skillsColumns}
         parentSkills={parentSkills}
         subSkill={subSkill}
-      />
+      /> */}
     </div>
   );
 }

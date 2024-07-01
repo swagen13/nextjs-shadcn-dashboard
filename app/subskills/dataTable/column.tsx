@@ -8,6 +8,7 @@ export const skillsColumns: ColumnDef<any>[] = [
     accessorKey: "skill_name",
     header: "Name",
   },
+
   {
     accessorKey: "createdat",
     header: "Created At",

@@ -18,8 +18,8 @@ interface SubSkill {
   children: ChildrenSkill[];
 }
 
+import { getSkills } from "../action";
 // Import necessary functions
-import { getAllSubSkills, getChildrenSkillsBySubSkillId } from "../action";
 import AddChildrenSkillForm from "./addChildrenSkillForm";
 
 interface addChildrenSkillPageProps {
@@ -28,14 +28,14 @@ interface addChildrenSkillPageProps {
 
 export default async function addChildrenSkillPage() {
   // Fetch all subskills
-  let subskills: any[] = await getAllSubSkills();
+  const skills = await getSkills();
 
   return (
     <div className="bg-gray-200 rounded-lg p-6 m-4">
       <div className="flex flex-row justify-between">
         <h1 className="text-2xl font-bold">Add Sub Skill</h1>
       </div>
-      <AddChildrenSkillForm subskills={subskills} />
+      <AddChildrenSkillForm subskills={skills} />
     </div>
   );
 }

@@ -4,6 +4,7 @@ export const SkillSchema = z.object({
   skill_name: z.string().min(3, {
     message: "Name must be at least 3 characters long",
   }),
+  parent_id: z.string(),
 });
 
 export type SkillSchemaType = z.infer<typeof SkillSchema>;
