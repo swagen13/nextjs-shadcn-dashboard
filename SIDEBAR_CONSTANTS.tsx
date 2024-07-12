@@ -38,11 +38,6 @@ export const SIDENAV_ITEM: SideNavItemGroup[] = [
         ],
       },
       {
-        title: "Posts",
-        path: "/posts",
-        icon: <BsBlockquoteLeft size={20} />,
-      },
-      {
         title: "Users",
         path: "/users",
         icon: <BsPeople size={20} />,
