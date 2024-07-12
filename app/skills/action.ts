@@ -1,5 +1,4 @@
 "use server";
-import { z } from "zod";
 import { EditSkillSchema, SkillSchema } from "./schema";
 
 // postgres connection
@@ -100,62 +99,28 @@ export async function getSkills(page: number, limit: number, name?: string) {
   }
 }
 
-// Function to build the skill hierarchy
-function buildSkillHierarchy(skills: any[]) {
-  const skillMap = new Map();
-  const roots: any[] = [];
-
-  // Create a map of skills by their ID and initialize children arrays
-  skills.forEach((skill) => {
-    skillMap.set(skill.id, { ...skill, children: [] });
-  });
-
-  // Iterate over the skills and populate the hierarchy
-  skillMap.forEach((skill) => {
-    if (skill.parent_id === null) {
-      roots.push(skill);
-    } else {
-      const parent = skillMap.get(parseInt(skill.parent_id));
-      if (parent) {
-        parent.children.push(skill);
-      }
-    }
-  });
-
-  return roots;
-}
-
-// Function to generate sequence strings
-function generateSequences(skills: any[], parentSequence: string = "") {
-  skills.forEach((skill, index) => {
-    const currentSequence = parentSequence
-      ? `${parentSequence}.${index + 1}`
-      : `${index + 1}`;
-    skill.sequence = currentSequence;
-
-    // Recursively generate sequences for children
-    if (skill.children && skill.children.length > 0) {
-      generateSequences(skill.children, currentSequence);
-    }
-  });
-}
-
 // addSkill a new skill
 export async function addSkill(formData: FormData) {
-  const { skill_name } = SkillSchema.parse(Object.fromEntries(formData));
+  const { skill_name, parent_id, sequence } = SkillSchema.parse(
+    Object.fromEntries(formData)
+  );
 
   const skill = {
     skill_name,
+    parent_id,
+    sequence,
     createdat: new Date(),
   };
+
+  console.log("skill", skill);
 
   try {
     await sql`
       INSERT INTO
         skillstest
-        (skill_name, createdat,updatedat)
+        (skill_name, parent_id, sequence, createdat,updatedat)
       VALUES
-        (${skill.skill_name}, ${skill.createdat},${skill.createdat})
+        (${skill.skill_name}, ${skill.parent_id}, ${skill.sequence}, ${skill.createdat},${skill.createdat})
     `;
 
     // return success message
@@ -174,7 +139,7 @@ export async function getSkillById(id: string) {
       SELECT
         *
       FROM
-        skills
+        skillstest
       WHERE
         id = ${id}
     `;
@@ -192,7 +157,7 @@ export async function getSkillById(id: string) {
 
 // update skill by id
 export async function updateSkill(formData: FormData) {
-  const { id, name, description, translationsname } = EditSkillSchema.parse(
+  const { id, skill_name } = EditSkillSchema.parse(
     Object.fromEntries(formData)
   );
 
@@ -201,11 +166,9 @@ export async function updateSkill(formData: FormData) {
   try {
     const result = await sql`
       UPDATE
-        skills
+        skillstest
       SET
-        name = ${name},
-        description = ${description},
-        translationsname = ${translationsname},
+        skill_name = ${skill_name},
         updatedat = ${updatedat}
       WHERE
         id = ${id}
@@ -218,18 +181,19 @@ export async function updateSkill(formData: FormData) {
   }
 }
 
-// get skills from skills table
-export async function getAllSkills() {
+// delete skill by id
+export async function deleteSkill(id: string) {
   try {
-    const result = await sql`
-      SELECT
-        *
-      FROM
-        skills
+    await sql`
+      DELETE FROM
+        skillstest
+      WHERE
+        id = ${id}
     `;
-    return result;
+
+    return { message: "Skill deleted successfully", status: true };
   } catch (error) {
-    console.error("Error fetching skills:", error);
-    return [];
+    console.error("Error deleting skill:", error);
+    return { message: "Error deleting skill" };
   }
 }

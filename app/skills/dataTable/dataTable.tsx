@@ -21,6 +21,7 @@ import { useEffect, useState } from "react";
 // import { deleteSkill } from "../action";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
+import { deleteSkill } from "../action";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -48,9 +49,6 @@ export function SkillsDataTable<TData, TValue>({
   useEffect(() => {
     // Update key to force re-render when data changes
     setKey((prevKey) => prevKey + 1);
-  }, [data]);
-  useEffect(() => {
-    console.log("data", data);
   }, [data]);
 
   const table = useReactTable({
@@ -103,6 +101,23 @@ export function SkillsDataTable<TData, TValue>({
       router.push(`/skills?name=${name}&limit=${event.target.value}&page=1`);
     } else {
       router.push(`/skills?limit=${event.target.value}&page=1`);
+    }
+  };
+
+  // delete skill
+  const onDeleteSkill = async (id: string) => {
+    const result = await deleteSkill(id);
+    if (result.status) {
+      Swal.fire({
+        title: "Skill deleted successfully",
+        icon: "success",
+      });
+      return false;
+    } else {
+      Swal.fire({
+        title: "Error deleting skill",
+        icon: "error",
+      });
     }
   };
 
@@ -184,7 +199,9 @@ export function SkillsDataTable<TData, TValue>({
                             className="mr-4 text-red-500"
                             variant={"outline"}
                             onClick={() => {
-                              // onDeleteSkill((row.original as { id: string }).id); // Call onDeleteSkill when user is deleted
+                              onDeleteSkill(
+                                (row.original as { id: string }).id
+                              );
                             }}
                           >
                             Delete

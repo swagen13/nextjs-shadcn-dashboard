@@ -140,26 +140,24 @@ export async function updateSKillList(skills: any[]) {
 
   // update the skills list
   try {
-    console.log("flattenedSkills", flattenedSkills);
-
-    // const queries = flattenedSkills.map((skill) => {
-    //   const sequence =
-    //     skill.sequence !== undefined ? `'${skill.sequence}'` : "NULL";
-    //   return `
-    //     UPDATE skillstest
-    //     SET parent_id = ${skill.parentId}, sequence = ${sequence}
-    //     WHERE id = ${skill.id};
-    //   `;
-    // });
-    // await sql.begin(async (sql) => {
-    //   for (const query of queries) {
-    //     await sql.unsafe(query);
-    //   }
-    // });
-    // return {
-    //   message: "Skill list updated successfully",
-    //   status: true,
-    // };
+    const queries = flattenedSkills.map((skill) => {
+      const sequence =
+        skill.sequence !== undefined ? `'${skill.sequence}'` : "NULL";
+      return `
+        UPDATE skillstest
+        SET parent_id = ${skill.parentId}, sequence = ${sequence}
+        WHERE id = ${skill.id};
+      `;
+    });
+    await sql.begin(async (sql) => {
+      for (const query of queries) {
+        await sql.unsafe(query);
+      }
+    });
+    return {
+      message: "Skill list updated successfully",
+      status: true,
+    };
   } catch (error) {
     console.error("Error updating skills list:", error);
     return { message: "Skill list updated error", status: false };

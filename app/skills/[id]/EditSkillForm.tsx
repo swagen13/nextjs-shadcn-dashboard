@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
 import { EditSkillSchema, EditSkillSchemaType } from "../schema";
@@ -26,13 +26,15 @@ const initialState = {
 export default function EditSkillForm({ skillData }: any) {
   const formRef = useRef<HTMLFormElement>(null);
 
+  useEffect(() => {
+    console.log("skillData", skillData);
+  }, [skillData]);
+
   const form = useForm<EditSkillSchemaType>({
     resolver: zodResolver(EditSkillSchema),
     defaultValues: {
       id: skillData.id.toString(),
-      name: skillData.name,
-      description: skillData.description ? skillData.description : "",
-      translationsname: skillData.translationsname,
+      skill_name: skillData.skill_name,
     },
   });
 
@@ -41,9 +43,7 @@ export default function EditSkillForm({ skillData }: any) {
 
   const onSubmit = handleSubmit(async (data) => {
     const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("description", data.description);
-    formData.append("translationsname", data.translationsname);
+    formData.append("skill_name", data.skill_name);
     formData.append("id", data.id);
 
     const response = await updateSkill(formData);
@@ -71,41 +71,12 @@ export default function EditSkillForm({ skillData }: any) {
               <div className="mb-4 w-full sm:w-1/2 px-2">
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="skill_name"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Name</FormLabel>
                       <FormControl>
                         <Input placeholder="Name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                {/* description */}
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Description" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="mb-4 w-full sm:w-1/2 px-2">
-                <FormField
-                  control={form.control}
-                  name="translationsname"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Translation Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Translation Name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -118,7 +89,6 @@ export default function EditSkillForm({ skillData }: any) {
           <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
             <Button
               type="submit"
-              disabled={!isValid}
               className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm disabled:opacity-50"
             >
               {isSubmitting ? (
