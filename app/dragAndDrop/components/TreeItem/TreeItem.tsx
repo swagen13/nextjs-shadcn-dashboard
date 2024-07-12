@@ -101,21 +101,6 @@ export const TreeItem = forwardRef<HTMLDivElement, Props>(
             </Button>
           )}
           <span className={styles.Text}>{value}</span>
-          {/* See more details button */}
-          <div className={styles.SeeMore}>
-            <Button onClick={seeMore} className={classNames(styles.Collapse)}>
-              {/* Use seeMore prop */}
-              <BsEye color="black" size={18} className="mr-2" />
-            </Button>
-            <Button onClick={seeMore} className={classNames(styles.Collapse)}>
-              {/* Use seeMore prop */}
-              <BsPencil color="black" size={18} className="mr-2" />
-            </Button>
-            <Button onClick={seeMore} className={classNames(styles.Collapse)}>
-              {/* Use seeMore prop */}
-              <BsTrash color="black" size={18} />
-            </Button>
-          </div>
           {!clone && onRemove && <Remove onClick={onRemove} />}
           {clone && childCount && childCount > 1 ? (
             <span className={styles.Count}>{childCount}</span>

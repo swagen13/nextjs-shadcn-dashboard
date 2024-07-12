@@ -35,7 +35,7 @@ import {
   setProperty,
 } from "./utilities";
 import { Button } from "@/components/ui/button";
-import { updateSKillList } from "./action";
+import { updateSkillList } from "./action";
 import Swal from "sweetalert2";
 
 const initialItems: TreeItems = [
@@ -215,8 +215,46 @@ export function SortableTree({
     </div>
   );
 
+  // Function to generate sequence strings
+  function generateSequences(skills: any[], parentSequence: string = "") {
+    skills.forEach((skill, index) => {
+      const currentSequence = parentSequence
+        ? `${parentSequence}.${index + 1}`
+        : `${index + 1}`;
+      skill.sequence = currentSequence;
+
+      // Recursively generate sequences for children
+      if (skill.children && skill.children.length > 0) {
+        generateSequences(skill.children, currentSequence);
+      }
+    });
+  }
+
+  // Function to flatten the skills list
+  function flattenSkills(skills: any[]) {
+    const flattenedSkills: any[] = [];
+    const stack = [...skills];
+
+    while (stack.length > 0) {
+      const skill = stack.pop();
+      flattenedSkills.push(skill);
+
+      if (skill.children && skill.children.length > 0) {
+        stack.push(...skill.children);
+      }
+    }
+
+    return flattenedSkills;
+  }
+
   async function handleSave() {
-    const result = await updateSKillList(items);
+    // generate sequences
+    generateSequences(items);
+
+    // // flatten the skills list
+    const flattenedSkills = flattenSkills(items);
+
+    const result = await updateSkillList(flattenedSkills);
     if (result) {
       if (result.status) {
         alert(result.message);

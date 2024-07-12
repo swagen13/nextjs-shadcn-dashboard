@@ -76,21 +76,6 @@ function buildSkillHierarchy(skills: any[]) {
   return roots;
 }
 
-// Function to generate sequence strings
-function generateSequences(skills: any[], parentSequence: string = "") {
-  skills.forEach((skill, index) => {
-    const currentSequence = parentSequence
-      ? `${parentSequence}.${index + 1}`
-      : `${index + 1}`;
-    skill.sequence = currentSequence;
-
-    // Recursively generate sequences for children
-    if (skill.children && skill.children.length > 0) {
-      generateSequences(skill.children, currentSequence);
-    }
-  });
-}
-
 export async function saveSkillsOrder(skills: any[]) {
   try {
     const queries = skills.map((skill) => {
@@ -112,48 +97,51 @@ export async function saveSkillsOrder(skills: any[]) {
   }
 }
 
-// Function to flatten the skills list
-function flattenSkills(skills: any[]) {
-  const flattenedSkills: any[] = [];
-  const stack = [...skills];
+export async function updateSkillList(skills: any[]) {
+  const updatedat = new Date().toISOString(); // ใช้รูปแบบ ISO สำหรับวันที่และเวลา
 
-  while (stack.length > 0) {
-    const skill = stack.pop();
-    flattenedSkills.push(skill);
-
-    if (skill.children && skill.children.length > 0) {
-      stack.push(...skill.children);
-    }
-  }
-
-  return flattenedSkills;
-}
-
-export async function updateSKillList(skills: any[]) {
-  console.log("skills", skills.length);
-
-  // generate sequences
-  generateSequences(skills);
-
-  // flatten the skills list
-  const flattenedSkills = flattenSkills(skills);
-
-  // update the skills list
   try {
-    const queries = flattenedSkills.map((skill) => {
-      const sequence =
-        skill.sequence !== undefined ? `'${skill.sequence}'` : "NULL";
-      return `
-        UPDATE skillstest
-        SET parent_id = ${skill.parentId}, sequence = ${sequence}
-        WHERE id = ${skill.id};
-      `;
-    });
-    await sql.begin(async (sql) => {
-      for (const query of queries) {
-        await sql.unsafe(query);
-      }
-    });
+    const ids = skills.map((skill) => skill.id).join(", ");
+
+    const parentCases = skills
+      .map(
+        (skill) => `
+          WHEN ${skill.id} THEN ${
+          skill.parentId !== null ? `'${skill.parentId}'` : "NULL"
+        }
+        `
+      )
+      .join(" ");
+
+    const sequenceCases = skills
+      .map(
+        (skill) => `
+          WHEN ${skill.id} THEN ${
+          skill.sequence !== undefined ? `'${skill.sequence}'` : "NULL"
+        }
+        `
+      )
+      .join(" ");
+
+    const updatedCases = skills
+      .map(
+        (skill) => `
+          WHEN ${skill.id} THEN '${updatedat}'
+        `
+      )
+      .join(" ");
+
+    const query = `
+      UPDATE skillstest
+      SET
+        parent_id = CASE id ${parentCases} ELSE parent_id END,
+        sequence = CASE id ${sequenceCases} ELSE sequence END,
+        updatedat = CASE id ${updatedCases} ELSE updatedat END
+      WHERE id IN (${ids});
+    `;
+
+    await sql.unsafe(query);
+
     return {
       message: "Skill list updated successfully",
       status: true,

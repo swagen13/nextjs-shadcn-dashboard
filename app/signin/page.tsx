@@ -2,6 +2,7 @@
 // import SiginUpPage from "@/app/signup/page";
 import useSignIn from "@/hooks/signin";
 import { useEffect, useState } from "react";
+import SiginUpPage from "../signup/page";
 
 function SignInPage(BuildContext: any) {
   const [email, setEmail] = useState("");
@@ -89,13 +90,13 @@ function SignInPage(BuildContext: any) {
           </div>
         </form>
       </div>
-      {/* {showModal && (
+      {showModal && (
         <div>
           <div className="fixed inset-0 bg-black opacity-50"></div>
 
-          <SiginUpPage setShowModal={setShowModal} />
+          <SiginUpPage />
         </div>
-      )}{" "} */}
+      )}{" "}
     </div>
   );
 }
