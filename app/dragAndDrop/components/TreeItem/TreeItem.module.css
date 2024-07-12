@@ -1,0 +1,200 @@
+/* Wrapper styles */
+.Wrapper {
+  list-style: none;
+  box-sizing: border-box;
+  padding-left: var(--spacing);
+  margin-bottom: -1px;
+  transition: background-color 0.3s;
+}
+
+.Wrapper.clone {
+  display: inline-block;
+  pointer-events: none;
+  padding: 0;
+  margin-left: 10px;
+  margin-top: 5px;
+}
+
+.Wrapper.clone .TreeItem {
+  --vertical-padding: 5px;
+  padding-right: 24px;
+  border-radius: 4px;
+  box-shadow: 0px 15px 15px 0 rgba(34, 33, 81, 0.1);
+}
+
+.Wrapper.ghost {
+  opacity: 0.5;
+}
+
+.Wrapper.ghost.indicator {
+  opacity: 1;
+  position: relative;
+  z-index: 1;
+  margin-bottom: -1px;
+}
+
+.Wrapper.ghost.indicator .TreeItem {
+  position: relative;
+  padding: 0;
+  height: 8px;
+  border-color: #2389ff;
+  background-color: #56a1f8;
+}
+
+.Wrapper.ghost.indicator .TreeItem:before {
+  position: absolute;
+  left: -8px;
+  top: -4px;
+  display: block;
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid #2389ff;
+  background-color: #ffffff;
+}
+
+.Wrapper.ghost.indicator .TreeItem > * {
+  /* Items are hidden using height and opacity to retain focus */
+  opacity: 0;
+  height: 0;
+}
+
+.Wrapper.ghost .TreeItem > * {
+  box-shadow: none;
+  background-color: transparent;
+}
+
+/* TreeItem base styles */
+.TreeItem {
+  --vertical-padding: 10px;
+  position: relative;
+  display: flex; /* Change to flex to allow proper alignment */
+  align-items: center;
+  padding: var(--vertical-padding) 10px;
+  background-color: #fff;
+  border: 1px solid #dedede;
+  color: #222;
+  box-sizing: border-box;
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.TreeItem:hover {
+  background-color: #f5f5f5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Text styles within TreeItem */
+.Text {
+  flex-grow: 1;
+  padding-left: 0.5rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* View Details button styles */
+.ViewDetails {
+  margin-left: auto; /* Push the button to the far right */
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.ViewDetails:hover {
+  background-color: #0056b3;
+}
+
+/* Count styles within TreeItem */
+.Count {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #ff233d;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Interaction disabling styles */
+.disableInteraction {
+  pointer-events: none;
+}
+
+.disableSelection .Text,
+.disableSelection .Count,
+.clone .Text,
+.clone .Count {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Collapse animation styles */
+.Collapse svg {
+  transition: transform 250ms ease;
+}
+
+.Collapse.collapsed svg {
+  transform: rotate(-90deg);
+}
+
+/* Handle styles */
+.Handle {
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #919eab;
+  transition: color 0.3s;
+}
+
+.Handle:hover {
+  color: #2389ff;
+}
+
+.Collapse {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+}
+
+/* collapse hover */
+.Collapse:hover {
+  background-color: #f5f5f5;
+  border-radius: 50%;
+}
+
+.SeeMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #919eab;
+  cursor: pointer;
+  transition: color 0.3s;
+  padding-right: 40px;
+}
+
+.SeeMore:hover {
+  color: #2389ff;
+}

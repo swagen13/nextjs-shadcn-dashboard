@@ -1,8 +1,6 @@
 import {
   BsBlockquoteLeft,
-  BsBook,
   BsHouseDoor,
-  BsList,
   BsPeople,
   BsPersonLinesFill,
   BsSliders,
@@ -34,12 +32,8 @@ export const SIDENAV_ITEM: SideNavItemGroup[] = [
             path: "/skills",
           },
           {
-            title: "Sub Skill",
-            path: "/subskills",
-          },
-          {
-            title: "Children Skill",
-            path: "/childrenSkills",
+            title: "Skill Sortable",
+            path: "/dragAndDrop",
           },
         ],
       },

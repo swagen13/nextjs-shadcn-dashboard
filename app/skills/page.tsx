@@ -21,7 +21,23 @@ export default async function SkillsPage({ searchParams }: SkillsPageProps) {
 
   const pageParam = parseInt(page as string);
 
-  const skills = await getSkills();
+  // parse the limit to an integer
+  const limitParam = parseInt(limit as string);
+
+  const skills = await getSkills(pageParam, limitParam, name);
+
+  let close = false;
+
+  console.log("skills", skills.length);
+
+  if (skills.length !== limitParam + 1) {
+    close = true;
+    // remove the last index from the skills array
+    skills.pop();
+  } else {
+    close = false;
+    skills.pop();
+  }
 
   return (
     <div className="bg-gray-200 rounded-lg p-6 m-4">
@@ -36,7 +52,11 @@ export default async function SkillsPage({ searchParams }: SkillsPageProps) {
           </Button>
         </Link>
       </div>
-      <SkillsDataTable data={skills} columns={skillsColumns} />
+      <SkillsDataTable
+        columns={skillsColumns}
+        data={skills}
+        closeNextPage={close}
+      />
     </div>
   );
 }
