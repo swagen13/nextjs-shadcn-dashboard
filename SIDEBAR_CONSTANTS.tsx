@@ -1,6 +1,8 @@
 import {
   BsBlockquoteLeft,
+  BsFilePost,
   BsHouseDoor,
+  BsPencil,
   BsPeople,
   BsPersonLinesFill,
   BsSliders,
@@ -36,6 +38,16 @@ export const SIDENAV_ITEM: SideNavItemGroup[] = [
             path: "/dragAndDrop",
           },
         ],
+      },
+      {
+        title: "Job Post",
+        path: "/jobPost",
+        icon: <BsFilePost size={20} />,
+      },
+      {
+        title: "Editors",
+        path: "/editor",
+        icon: <BsPencil size={20} />,
       },
       {
         title: "Users",
