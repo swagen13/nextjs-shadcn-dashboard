@@ -12,13 +12,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRef } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
-import { BsPlus } from "react-icons/bs";
+import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
 import { addJobPost } from "../action";
-import { JobPostSchema, JobPostSchemaType, JobPostSubmission } from "../schema";
-import { useRouter } from "next/navigation";
+import { JobPostSchema, JobPostSchemaType } from "../schema";
+import { PlateEditor } from "./PlateEditor";
 
 // Define an interface for skill
 interface Users {
@@ -36,6 +36,7 @@ interface AddJobPostFormProps {
 export default function AddJobPostForm({ users }: AddJobPostFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
+  const [description, setDescription] = useState([]);
 
   const form = useForm<JobPostSchemaType>({
     resolver: zodResolver(JobPostSchema),
@@ -49,14 +50,16 @@ export default function AddJobPostForm({ users }: AddJobPostFormProps) {
   });
 
   const { handleSubmit, reset, control, formState } = form;
-  const { fields, append } = useFieldArray({
-    control,
-    name: "descriptions",
-  });
+
   const { isSubmitting, errors } = formState;
 
-  const onSubmit = handleSubmit(async (data: JobPostSubmission) => {
-    const response = await addJobPost(data);
+  const onSubmit = handleSubmit(async (data: any) => {
+    const jobPostData = {
+      ...data,
+      description: JSON.stringify(description),
+    };
+
+    const response = await addJobPost(jobPostData);
 
     if (response.status) {
       Swal.fire({
@@ -72,10 +75,6 @@ export default function AddJobPostForm({ users }: AddJobPostFormProps) {
       });
     }
   });
-
-  const handleAddDescription = () => {
-    append({ description: "" });
-  };
 
   return (
     <Form {...form}>
@@ -150,41 +149,11 @@ export default function AddJobPostForm({ users }: AddJobPostFormProps) {
               />
             </div>
           </div>
-
-          {fields.map((field, index) => (
-            <div key={field.id} className="mt-4">
-              <FormField
-                control={form.control}
-                name={`descriptions.${index}.description`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description {index + 1}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Description"
-                        {...field}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {errors.descriptions && errors.descriptions[index] && (
-                <span>{errors.descriptions[index]?.description?.message}</span>
-              )}
-            </div>
-          ))}
-
+          <div>
+            Description
+            <PlateEditor initialData={description} onChange={setDescription} />
+          </div>
           <div className="flex">
-            <button
-              type="button"
-              onClick={handleAddDescription}
-              className="mt-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 flex items-center"
-            >
-              <BsPlus className="mr-2" />
-              Add Description
-            </button>
             <div className="">
               <FormField
                 control={form.control}

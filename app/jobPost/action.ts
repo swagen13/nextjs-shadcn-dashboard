@@ -3,6 +3,7 @@
 // postgres connection
 import postgres from "postgres";
 import {
+  EditJobPostSchema,
   JobPost,
   JobPostEditSubmission,
   JobPostSchema,
@@ -28,6 +29,7 @@ export async function getJobPost(page: number, limit: number, name?: string) {
           jp.wage,
           jp.post_owner,
           jp.show,
+          jp.description,
           jp.created_at,
           jp.updated_at,
           json_agg(
@@ -105,31 +107,25 @@ export async function getUsers() {
   }
 }
 
-export async function addJobPost(jobPost: JobPostSubmission) {
+export async function addJobPost(jobPost: any) {
   try {
     // Validate the jobPost object using the schema
     JobPostSchema.parse(jobPost);
 
-    const { job_title, wage, post_owner, show, descriptions } = jobPost;
+    const { job_title, wage, post_owner, show, description } = jobPost;
     const currentTime = new Date().toISOString(); // Get the current time in ISO format
+
+    console.log("jobPost", jobPost);
 
     // Start a transaction
     await sql.begin(async (sql) => {
       // Insert into JobPosts table and get the inserted job post id
       const result = await sql`
-        INSERT INTO jobposts (job_title, wage, post_owner, show, created_at, updated_at)
-        VALUES (${job_title}, ${wage}, ${post_owner}, ${show}, ${currentTime}, ${currentTime})
+        INSERT INTO jobposts (job_title, wage, post_owner, show,description, created_at, updated_at)
+        VALUES (${job_title}, ${wage}, ${post_owner}, ${show}, ${description}, ${currentTime}, ${currentTime})
         RETURNING id;
       `;
       const jobPostId = result[0].id;
-
-      // Insert into JobPostDescription table
-      for (const desc of descriptions) {
-        await sql`
-          INSERT INTO JobPostDescription (description, jobpost_id,created_at, updated_at)
-          VALUES (${desc.description}, ${jobPostId},${currentTime},${currentTime});
-        `;
-      }
     });
 
     return {
@@ -168,33 +164,22 @@ export async function handlerShowJobPost(jobPostId: number, show: boolean) {
 
 export async function getJobPostById(jobPostId: number) {
   try {
-    const result = await sql`SELECT
-          jp.id,
-          jp.job_title,
-          jp.wage,
-          jp.post_owner,
-          jp.show,
-          jp.created_at,
-          jp.updated_at,
-          json_agg(
-              json_build_object(
-                  'id', jd.id,
-                  'description', jd.description,
-                  'created_at', jd.created_at,
-                  'updated_at', jd.updated_at
-              )
-          ) AS descriptions
-      FROM
-          JobPosts jp      
-      LEFT JOIN
-          JobPostDescription jd
-      ON
-          jp.id = jd.jobpost_id
+    const result = await sql`
+          SELECT
+          id,
+          job_title,
+          wage,
+          post_owner,
+          show,
+          description,
+          created_at,
+          updated_at
+          FROM
+          JobPosts
       WHERE
-          jp.id = ${jobPostId}
-          GROUP BY
-          jp.id
-          ;`;
+          id = ${jobPostId}
+      GROUP BY
+          id;`;
     return result;
   } catch (error) {
     console.error("Error updating visibility:", error);
@@ -202,50 +187,29 @@ export async function getJobPostById(jobPostId: number) {
   }
 }
 
-export async function editJobPost(jobPost: JobPostEditSubmission) {
+export async function editJobPost(jobPost: any) {
   try {
     // Validate the jobPost object using the schema
-    JobPostSchema.parse(jobPost);
+    EditJobPostSchema.parse(jobPost);
 
-    const { id, job_title, wage, post_owner, show, descriptions } = jobPost;
+    const { id, job_title, wage, post_owner, show, description } = jobPost;
     const currentTime = new Date().toISOString(); // Get the current time in ISO format
 
-    // Start a transaction
     await sql.begin(async (sql) => {
       // Update JobPosts table
-      await sql`
+      const result = await sql`
     UPDATE jobposts
     SET
       job_title = ${job_title},
       wage = ${wage},
       post_owner = ${post_owner},
       show = ${show},
+      description = ${description},
       updated_at = ${currentTime}
     WHERE id = ${id}
   `;
 
-      // Delete existing JobPostDescription records
-      await sql`
-    DELETE FROM JobPostDescription
-    WHERE jobpost_id = ${id}
-  `;
-
-      // Prepare values for batch insert
-      const descriptionValues = descriptions
-        .map(
-          (desc) =>
-            `('${desc.description.replace(
-              /'/g,
-              "''"
-            )}', ${id}, '${currentTime}', '${currentTime}')`
-        )
-        .join(", ");
-
-      // Insert new JobPostDescription records
-      await sql.unsafe(`
-    INSERT INTO JobPostDescription (description, jobpost_id, created_at, updated_at)
-    VALUES ${descriptionValues}
-  `);
+      console.log(result);
     });
 
     return {

@@ -25,7 +25,7 @@ export interface JobPostEditSubmission {
   job_title: string;
   wage: string;
   post_owner: string;
-  descriptions: { description: string }[];
+  description: any;
 }
 
 // Interface for JobPostDescription table
@@ -70,9 +70,7 @@ export const EditJobPostSchema = z.object({
   post_owner: z.string().min(1, {
     message: "Post owner is required",
   }),
-  descriptions: z.array(JobPostDescriptionSchema).nonempty({
-    message: "At least one description is required",
-  }),
+  description: z.any(),
 });
 
 export type EditJobPostSchemaType = z.infer<typeof EditJobPostSchema>;

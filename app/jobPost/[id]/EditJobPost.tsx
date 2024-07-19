@@ -12,16 +12,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useRef } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
-import { BsFillTrash3Fill, BsPlus } from "react-icons/bs";
-import Swal from "sweetalert2";
+import { useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { EditJobPostSchema, EditJobPostSchemaType } from "../schema";
+import { PlateEditor } from "./PlateEditor";
 import { editJobPost } from "../action";
-import {
-  EditJobPostSchema,
-  EditJobPostSchemaType,
-  JobPostEditSubmission,
-} from "../schema";
+import Swal from "sweetalert2";
 
 // Define an interface for skill
 interface Users {
@@ -48,28 +44,30 @@ export default function EditJobPostForm({
     job_title: jobPost[0].job_title,
     wage: jobPost[0].wage,
     post_owner: jobPost[0].post_owner,
-    descriptions: jobPost[0].descriptions,
+    description: jobPost[0].description,
     id: jobPost[0].id,
   };
+
+  const [description, setDescription] = useState(
+    JSON.parse(defaultValues.description)
+  );
 
   const form = useForm<EditJobPostSchemaType>({
     resolver: zodResolver(EditJobPostSchema),
     defaultValues,
   });
 
-  useEffect(() => {
-    console.log(jobPost);
-  }, []);
-
   const { handleSubmit, reset, control, formState } = form;
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "descriptions",
-  });
+
   const { isSubmitting, errors } = formState;
 
-  const onSubmit = handleSubmit(async (data: JobPostEditSubmission) => {
-    const response = await editJobPost(data);
+  const onSubmit = handleSubmit(async (data: any) => {
+    const jobPostData = {
+      ...data,
+      description: JSON.stringify(description),
+    };
+
+    const response = await editJobPost(jobPostData);
 
     if (response.status) {
       Swal.fire({
@@ -83,10 +81,6 @@ export default function EditJobPostForm({
       });
     }
   });
-
-  const handleAddDescription = () => {
-    append({ description: "" });
-  };
 
   return (
     <Form {...form}>
@@ -161,46 +155,11 @@ export default function EditJobPostForm({
               />
             </div>
           </div>
-
-          {fields.map((field, index) => (
-            <div key={field.id} className="mt-4 flex items-center space-x-4">
-              <div className="w-full">
-                <FormField
-                  control={form.control}
-                  name={`descriptions.${index}.description`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description {index + 1}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Description"
-                          {...field}
-                          className="w-full"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <Button
-                type="button"
-                onClick={() => remove(index)}
-                className="mt-8 flex items-center justify-center bg-white border hover:bg-gray-100 text-center"
-              >
-                <BsFillTrash3Fill className="text-black" />
-              </Button>
-            </div>
-          ))}
+          <div>
+            Description
+            <PlateEditor initialData={description} onChange={setDescription} />
+          </div>
           <div className="flex">
-            <button
-              type="button"
-              onClick={handleAddDescription}
-              className="mt-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 flex items-center"
-            >
-              <BsPlus className="mr-2" />
-              Add Description
-            </button>
             <div className="">
               <FormField
                 control={form.control}

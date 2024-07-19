@@ -164,7 +164,6 @@ import { useEffect, useMemo, useState } from "react";
 import { withReact } from "slate-react";
 import { withHistory } from "slate-history";
 import { createEditor } from "slate";
-import { addContent, fetchContent } from "../action";
 
 const plugins = createPlugins(
   [
@@ -370,73 +369,39 @@ const initialValue = [
   {
     id: "1",
     type: "p",
-    children: [{ text: "Hello, World!" }],
+    children: [{ text: "descrption" }],
   },
 ];
 
-export function PlateEditor() {
-  const {
-    register,
-    handleSubmit,
-    formState: { isSubmitting },
-  } = useForm();
-  const [editorValue, setEditorValue] = useState<any>(null);
+export function PlateEditor({ onChange, initialData }: any) {
+  const [editorValue, setEditorValue] = useState<any>(initialValue);
   const editor = useMemo(() => createPlateEditor({ plugins }), []);
 
   useEffect(() => {
-    console.log("editorValue", editorValue);
-  }, [editorValue]);
-
-  useEffect(() => {
-    const loadContent = async () => {
-      const content = await fetchContent();
-      if (content) {
-        setEditorValue(JSON.parse(content));
-      } else {
-        setEditorValue(initialValue);
-      }
-    };
-    loadContent();
-  }, []);
-
-  const onSubmit = async () => {
-    const serializedContent = JSON.stringify(editorValue);
-    const response = await addContent(serializedContent);
-    if (response.status) {
-      console.log(response.message);
-    } else {
-      console.error(response.message);
-    }
-  };
+    onChange(editorValue);
+  }, [editorValue, onChange]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <TooltipProvider>
-        <DndProvider backend={HTML5Backend}>
-          <CommentsProvider users={{}} myUserId="1">
-            {editorValue && (
-              <Plate
-                editor={editor}
-                plugins={plugins}
-                initialValue={editorValue}
-                onChange={setEditorValue}
-              >
-                <FixedToolbar>
-                  <FixedToolbarButtons />
-                </FixedToolbar>
-                <Editor />
-                <FloatingToolbar>
-                  <FloatingToolbarButtons />
-                </FloatingToolbar>
-                <CommentsPopover />
-              </Plate>
-            )}
-          </CommentsProvider>
-        </DndProvider>
-      </TooltipProvider>
-      <button type="submit" disabled={isSubmitting}>
-        Save Content
-      </button>
-    </form>
+    <TooltipProvider>
+      <DndProvider backend={HTML5Backend}>
+        <CommentsProvider users={{}} myUserId="1">
+          <Plate
+            editor={editor}
+            plugins={plugins}
+            initialValue={editorValue}
+            onChange={setEditorValue}
+          >
+            <FixedToolbar>
+              <FixedToolbarButtons />
+            </FixedToolbar>
+            <Editor />
+            <FloatingToolbar>
+              <FloatingToolbarButtons />
+            </FloatingToolbar>
+            <CommentsPopover />
+          </Plate>
+        </CommentsProvider>
+      </DndProvider>
+    </TooltipProvider>
   );
 }
