@@ -7,6 +7,9 @@ import {
   RenderAfterEditable,
   PlateLeaf,
   createPlateEditor,
+  TDescendant,
+  TElement,
+  TText,
 } from "@udecode/plate-common";
 import {
   createParagraphPlugin,
@@ -164,6 +167,7 @@ import { useEffect, useMemo, useState } from "react";
 import { withReact } from "slate-react";
 import { withHistory } from "slate-history";
 import { createEditor } from "slate";
+import { serializeHtml } from "@udecode/plate-serializer-html";
 
 const plugins = createPlugins(
   [
@@ -373,11 +377,22 @@ const initialValue = [
   },
 ];
 
-export function PlateEditor({ onChange, initialData }: any) {
+interface PlateEditorProps {
+  initialData: TElement[];
+  onChange: (html: string) => void;
+}
+
+export function PlateEditor({ onChange, initialData }: PlateEditorProps) {
   const [editorValue, setEditorValue] = useState<any>(initialData);
   const editor = useMemo(() => createPlateEditor({ plugins }), []);
 
+  const html = serializeHtml(editor, {
+    nodes: editor.children,
+    dndWrapper: (props) => <DndProvider backend={HTML5Backend} {...props} />,
+  });
+
   useEffect(() => {
+    console.log("editorValue", editorValue);
     onChange(editorValue);
   }, [editorValue, onChange]);
 

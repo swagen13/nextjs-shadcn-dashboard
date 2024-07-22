@@ -18,6 +18,8 @@ import { EditJobPostSchema, EditJobPostSchemaType } from "../schema";
 import { PlateEditor } from "./PlateEditor";
 import { editJobPost } from "../action";
 import Swal from "sweetalert2";
+import { serializeHtml } from "@udecode/plate-serializer-html";
+import { createPlateEditor } from "@udecode/plate-common";
 
 // Define an interface for skill
 interface Users {
@@ -62,24 +64,24 @@ export default function EditJobPostForm({
   const { isSubmitting, errors } = formState;
 
   const onSubmit = handleSubmit(async (data: any) => {
-    const jobPostData = {
-      ...data,
-      description: JSON.stringify(description),
-    };
+    console.log("editor");
 
-    const response = await editJobPost(jobPostData);
-
-    if (response.status) {
-      Swal.fire({
-        title: response.message,
-        icon: "success",
-      });
-    } else {
-      Swal.fire({
-        title: response.message,
-        icon: "error",
-      });
-    }
+    // const jobPostData = {
+    //   ...data,
+    //   description: JSON.stringify(description),
+    // };
+    // const response = await editJobPost(jobPostData);
+    // if (response.status) {
+    //   Swal.fire({
+    //     title: response.message,
+    //     icon: "success",
+    //   });
+    // } else {
+    //   Swal.fire({
+    //     title: response.message,
+    //     icon: "error",
+    //   });
+    // }
   });
 
   return (
