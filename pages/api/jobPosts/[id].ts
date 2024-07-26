@@ -5,34 +5,6 @@ const sql = postgres(process.env.DATABASE_URL || process.env.POSTGRES_URL!, {
   ssl: "allow",
 });
 
-const deserializeEditorContent = (html: string) => {
-  const domParser = new DOMParser();
-  const document = domParser.parseFromString(html, "text/html");
-  const elements = Array.from(document.body.childNodes);
-
-  return elements.map((element: any) => {
-    if (!(element instanceof Element)) {
-      return {
-        type: "p",
-        children: [{ text: element.textContent || "" }],
-        id: null,
-      };
-    }
-
-    const dataKey = element
-      .querySelector("[data-key]")
-      ?.getAttribute("data-key");
-    let textContent = element.textContent || ""; // Use textContent to get the plain text without HTML tags
-    textContent = textContent.replace(/<br\s*\/?>/g, "\n");
-
-    return {
-      type: "p",
-      children: [{ text: textContent }],
-      id: dataKey || null,
-    };
-  });
-};
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -65,14 +37,7 @@ export default async function handler(
         jp.id, u.username;
     `;
 
-    if (result.length === 0) {
-      return res.status(404).json({ error: "Job post not found" });
-    }
-
-    const jobPost = result[0];
-    jobPost.description = deserializeEditorContent(jobPost.description);
-
-    res.status(200).json(jobPost);
+    res.status(200).json(result[0]);
   } catch (error) {
     console.error("Error getting job post by ID:", error);
     res.status(500).json({ error: "Internal Server Error" });
