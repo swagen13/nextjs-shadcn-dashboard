@@ -12,14 +12,16 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRef, useState } from "react";
+import { deserializeHtml, TElement, TText } from "@udecode/plate-common";
+import { serializeHtml } from "@udecode/plate-serializer-html";
+import { useEffect, useRef, useState } from "react";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import { useForm } from "react-hook-form";
 import { EditJobPostSchema, EditJobPostSchemaType } from "../schema";
-import { PlateEditor } from "./PlateEditor";
+import { editor, PlateEditor } from "./PlateEditor";
 import { editJobPost } from "../action";
 import Swal from "sweetalert2";
-import { serializeHtml } from "@udecode/plate-serializer-html";
-import { createPlateEditor } from "@udecode/plate-common";
 
 // Define an interface for skill
 interface Users {
@@ -50,38 +52,116 @@ export default function EditJobPostForm({
     id: jobPost[0].id,
   };
 
-  const [description, setDescription] = useState(
-    JSON.parse(defaultValues.description)
-  );
+  const [description, setDescription] = useState<any>(null);
 
   const form = useForm<EditJobPostSchemaType>({
     resolver: zodResolver(EditJobPostSchema),
     defaultValues,
   });
 
+  useEffect(() => {
+    const convertedValue = deserializeEditorContent(defaultValues.description);
+    console.log("convertedValue", JSON.stringify(convertedValue, null, 2)); // ล็อกค่า convertedValue ในรูปแบบ JSON
+
+    setDescription(convertedValue);
+  }, []);
+
   const { handleSubmit, reset, control, formState } = form;
 
   const { isSubmitting, errors } = formState;
 
-  const onSubmit = handleSubmit(async (data: any) => {
-    console.log("editor");
+  const serializeEditorContent = (editor: any, nodes: any[]) => {
+    const nodesWithId = nodes.map((node, index) => ({
+      ...node,
+      id: node.id || index.toString(),
+    }));
 
-    // const jobPostData = {
-    //   ...data,
-    //   description: JSON.stringify(description),
-    // };
-    // const response = await editJobPost(jobPostData);
-    // if (response.status) {
-    //   Swal.fire({
-    //     title: response.message,
-    //     icon: "success",
-    //   });
-    // } else {
-    //   Swal.fire({
-    //     title: response.message,
-    //     icon: "error",
-    //   });
-    // }
+    const adjustedNodes = nodesWithId.map((node) => {
+      if (node.children && node.children.length > 0) {
+        node.children = node.children.map((child: { text: string }) => {
+          if (child.text && child.text.includes("\n")) {
+            child.text = child.text.replace(/\n/g, "<br />");
+          }
+          return child;
+        });
+      }
+      return node;
+    });
+
+    return serializeHtml(editor, {
+      nodes: adjustedNodes,
+      dndWrapper: (props) => <DndProvider backend={HTML5Backend} {...props} />,
+      convertNewLinesToHtmlBr: false, // Ensure new lines are converted to <br />
+    });
+  };
+
+  const adjustNodes = (nodes: any[]) => {
+    const adjustedNodes = [];
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (node.children.length === 1 && node.children[0].text === "") {
+        if (i > 0) {
+          // Add newline character to the previous node
+          const prevNode = adjustedNodes[adjustedNodes.length - 1];
+          if (prevNode && prevNode.children.length > 0) {
+            prevNode.children[prevNode.children.length - 1].text += "\n";
+          }
+        }
+      } else {
+        adjustedNodes.push(node);
+      }
+    }
+    return adjustedNodes;
+  };
+
+  const deserializeEditorContent = (html: string) => {
+    const domParser = new DOMParser();
+    const document = domParser.parseFromString(html, "text/html");
+    const elements = Array.from(document.body.childNodes);
+
+    return elements.map((element: any) => {
+      if (!(element instanceof Element)) {
+        return {
+          type: "p",
+          children: [{ text: element.textContent || "" }],
+          id: null,
+        };
+      }
+
+      const dataKey = element
+        .querySelector("[data-key]")
+        ?.getAttribute("data-key");
+      let textContent = element.textContent || ""; // Use textContent to get the plain text without HTML tags
+      textContent = textContent.replace(/<br\s*\/?>/g, "\n");
+
+      return {
+        type: "p",
+        children: [{ text: textContent }],
+        id: dataKey || null,
+      };
+    });
+  };
+
+  const onSubmit = handleSubmit(async (data: any) => {
+    const adjustedNodes = adjustNodes(description);
+    const serializedHtml = serializeEditorContent(editor, adjustedNodes);
+
+    const jobPostData = {
+      ...data,
+      description: serializedHtml,
+    };
+    const response = await editJobPost(jobPostData);
+    if (response.status) {
+      Swal.fire({
+        title: response.message,
+        icon: "success",
+      });
+    } else {
+      Swal.fire({
+        title: response.message,
+        icon: "error",
+      });
+    }
   });
 
   return (
@@ -157,10 +237,15 @@ export default function EditJobPostForm({
               />
             </div>
           </div>
-          <div>
-            Description
-            <PlateEditor initialData={description} onChange={setDescription} />
-          </div>
+          {description && (
+            <div>
+              Description
+              <PlateEditor
+                initialData={description}
+                onChange={setDescription}
+              />
+            </div>
+          )}
           <div className="flex">
             <div className="">
               <FormField

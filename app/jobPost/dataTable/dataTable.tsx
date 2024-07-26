@@ -20,7 +20,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 // import { deleteSkill } from "../action";
 import { useRouter } from "next/navigation";
-import { BsEye, BsEyeSlash, BsPencilFill, BsTrashFill } from "react-icons/bs";
+import {
+  BsEye,
+  BsEyeFill,
+  BsEyeSlash,
+  BsPencilFill,
+  BsTrashFill,
+} from "react-icons/bs";
 import Swal from "sweetalert2";
 import { deletePostJob, handlerShowJobPost } from "../action";
 import { DescriptionsModal } from "../modal/descriptionsModal";
@@ -84,28 +90,37 @@ export function JobPostDataTable<TData extends JobPost, TValue>({
         </button>
       ),
     },
-    {
-      id: "description",
-      header: "Description",
-      cell: ({ row }) => (
-        <div className="flex">
-          <div className="flex">
-            <button
-              onClick={() =>
-                handleOpenDescription((row.original as { id: number }).id)
-              }
-            >
-              View Description
-            </button>
-          </div>
-        </div>
-      ),
-    },
+    // {
+    //   id: "description",
+    //   header: "Description",
+    //   cell: ({ row }) => (
+    //     <div className="flex">
+    //       <div className="flex">
+    //         <button
+    //           onClick={() =>
+    //             handleOpenDescription((row.original as { id: number }).id)
+    //           }
+    //         >
+    //           <button className="text-yellow-400 text-xl">
+    //             <BsEyeFill />
+    //           </button>
+    //         </button>
+    //       </div>
+    //     </div>
+    //   ),
+    // },
     {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
         <div className="flex space-x-2">
+          <Link
+            href={`/jobPost/${(row.original as { id: number }).id}/preview`}
+          >
+            <button className="text-blue-400 text-xl">
+              <BsEyeFill />
+            </button>
+          </Link>
           <Link href={`/jobPost/${(row.original as { id: number }).id}`}>
             <button className="text-yellow-400 text-xl">
               <BsPencilFill />

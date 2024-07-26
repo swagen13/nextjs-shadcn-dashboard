@@ -18,7 +18,11 @@ import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
 import { addJobPost } from "../action";
 import { JobPostSchema, JobPostSchemaType } from "../schema";
-import { PlateEditor } from "./PlateEditor";
+import { editor, PlateEditor } from "./PlateEditor";
+import { deserializeHtml, TElement, TText } from "@udecode/plate-common";
+import { serializeHtml } from "@udecode/plate-serializer-html";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
 // Define an interface for skill
 interface Users {
@@ -54,9 +58,12 @@ export default function AddJobPostForm({ users }: AddJobPostFormProps) {
   const { isSubmitting, errors } = formState;
 
   const onSubmit = handleSubmit(async (data: any) => {
+    const adjustedNodes = adjustNodes(description);
+    const serializedHtml = serializeEditorContent(editor, adjustedNodes);
+
     const jobPostData = {
       ...data,
-      description: JSON.stringify(description),
+      description: serializedHtml,
     };
 
     const response = await addJobPost(jobPostData);
@@ -75,6 +82,68 @@ export default function AddJobPostForm({ users }: AddJobPostFormProps) {
       });
     }
   });
+
+  const deserializeEditorContent = (editor: any, html: string) => {
+    const domParser = new DOMParser();
+    const document = domParser.parseFromString(html, "text/html");
+    const elements = Array.from(document.body.childNodes);
+
+    return elements.map((element: any) => {
+      const dataKey = element
+        .querySelector("[data-key]")
+        ?.getAttribute("data-key");
+      const textContent = element.textContent || "";
+
+      return {
+        type: "p",
+        children: [{ text: textContent }],
+        id: dataKey || null,
+      };
+    });
+  };
+
+  const serializeEditorContent = (editor: any, nodes: any[]) => {
+    const nodesWithId = nodes.map((node, index) => ({
+      ...node,
+      id: node.id || index.toString(),
+    }));
+
+    const adjustedNodes = nodesWithId.map((node) => {
+      if (node.children && node.children.length > 0) {
+        node.children = node.children.map((child: { text: string }) => {
+          if (child.text && child.text.includes("\n")) {
+            child.text = child.text.replace(/\n/g, "<br />");
+          }
+          return child;
+        });
+      }
+      return node;
+    });
+
+    return serializeHtml(editor, {
+      nodes: adjustedNodes,
+      dndWrapper: (props) => <DndProvider backend={HTML5Backend} {...props} />,
+      convertNewLinesToHtmlBr: false, // Ensure new lines are converted to <br />
+    });
+  };
+
+  const adjustNodes = (nodes: TElement[]) => {
+    const adjustedNodes: TElement[] = [];
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (node.children.length === 1 && node.children[0].text === "") {
+        if (i > 0) {
+          const prevNode = adjustedNodes[adjustedNodes.length - 1];
+          if (prevNode && prevNode.children.length > 0) {
+            prevNode.children[prevNode.children.length - 1].text += "\n";
+          }
+        }
+      } else {
+        adjustedNodes.push(node);
+      }
+    }
+    return adjustedNodes;
+  };
 
   return (
     <Form {...form}>

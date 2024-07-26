@@ -1,6 +1,7 @@
-import { PlateEditor } from "./components/PlateEditor";
+// page.tsx
+import PlateEditor from "./components/PlateEditor";
 
-export default async function EditorPage() {
+export default function EditorPage() {
   return (
     <div className="bg-gray-200 rounded-lg p-6 m-4">
       <div className="flex flex-row justify-between">

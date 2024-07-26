@@ -194,20 +194,21 @@ export async function editJobPost(jobPost: any) {
 
     const { id, job_title, wage, post_owner, show, description } = jobPost;
     const currentTime = new Date().toISOString(); // Get the current time in ISO format
+    console.log("jobPost:", jobPost);
 
     await sql.begin(async (sql) => {
       // Update JobPosts table
       const result = await sql`
-    UPDATE jobposts
-    SET
-      job_title = ${job_title},
-      wage = ${wage},
-      post_owner = ${post_owner},
-      show = ${show},
-      description = ${description},
-      updated_at = ${currentTime}
-    WHERE id = ${id}
-  `;
+      UPDATE jobposts
+      SET
+        job_title = ${job_title},
+        wage = ${wage},
+        post_owner = ${post_owner},
+        show = ${show},
+        description = ${description},
+        updated_at = ${currentTime}
+      WHERE id = ${id}
+    `;
 
       console.log(result);
     });

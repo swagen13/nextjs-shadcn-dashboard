@@ -10,7 +10,7 @@ import {
 } from "@udecode/plate-common";
 import { createParagraphPlugin } from "@udecode/plate-paragraph";
 import { serializeHtml } from "@udecode/plate-serializer-html";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { BlockquoteElement } from "@/components/plate-ui/blockquote-element";
 import { CodeBlockElement } from "@/components/plate-ui/code-block-element";
@@ -354,130 +354,44 @@ const plugins = createPlugins(
 
 const initialValue = [
   {
+    id: "1",
     type: "p",
-    children: [{ text: "Hello, world!" }],
-  },
-  {
-    type: "p",
-    children: [{ text: "" }], // บรรทัดเปล่า
-  },
-  {
-    type: "p",
-    children: [{ text: "Another paragraph." }],
+    children: [{ text: "descrption" }],
   },
 ];
 
-const initialValueHTML =
-  '<div><div contenteditable="false"><div><div><div data-key="jart1" draggable="true"></div></div></div></div><div><div class="slate-p" placeholder="Type a paragraph">sdasd</div></div></div><div><div contenteditable="false"><div><div><div data-key="i6p7k" draggable="true"></div></div></div></div><div><div class="slate-p" placeholder="Type a paragraph">asd</div></div></div><div><div contenteditable="false"><div><div><div data-key="a2491" draggable="true"></div></div></div></div><div><div class="slate-p" placeholder="Type a paragraph"></div></div></div><div><div contenteditable="false"><div><div><div data-key="fikw6" draggable="true"></div></div></div></div><div><div class="slate-p" placeholder="Type a paragraph">asd</div></div></div>';
+interface PlateEditorProps {
+  initialData: any;
+}
 
-export default function PlateEditor() {
-  const [htmls, setHtml] = useState<any>(null);
-  const editor = useMemo(() => createPlateEditor({ plugins }), []);
+export const editor = createPlateEditor({ plugins });
 
+export function PlateEditor({ initialData }: PlateEditorProps) {
+  const [editorValue, setEditorValue] = useState<any>(initialData);
+  const [readOnly, setReadOnly] = useState(false);
   useEffect(() => {
-    const convert = convertToSlateValue(initialValueHTML);
-    setHtml(convert);
-  }, []);
-
-  useEffect(() => {
-    console.log("htmls", htmls);
-  }, [htmls]);
-
-  const handleSubmit = () => {
-    const serializedHtml = serializeHtml(editor, {
-      nodes: htmls,
-      dndWrapper: (props) => <DndProvider backend={HTML5Backend} {...props} />,
-      convertNewLinesToHtmlBr: true,
-      stripWhitespace: false,
-    });
-
-    console.log("serializedHtml", serializedHtml);
-
-    const deserialize = deserializeEditorContent(serializedHtml);
-
-    console.log("deserialized", deserialize);
-  };
-
-  const deserializeEditorContent = (serializedHtml: any) => {
-    return deserializeHtml(editor, { element: serializedHtml });
-  };
-
-  const convertToSlateValue = (html: string) => {
-    const editor = createPlateEditor({
-      plugins: createPlugins([createParagraphPlugin()]),
-    });
-
-    const convertedValue = deserializeHtml(editor, {
-      element: html,
-    }) as (TElement | TText)[];
-
-    const result: TElement[] = [];
-    let currentParagraph: TElement = { type: "p", children: [] };
-
-    convertedValue.forEach((node) => {
-      if ((node as TElement).type === "br") {
-        currentParagraph.children.push({ text: "\n" } as TText);
-      } else {
-        currentParagraph.children.push(node);
-      }
-    });
-
-    if (currentParagraph.children.length > 0) {
-      result.push(currentParagraph);
-    }
-
-    return result;
-  };
-
-  const adjustNodes = (nodes: any) => {
-    const adjustedNodes = [];
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
-      if (node.children.length === 1 && node.children[0].text === "") {
-        if (i > 0) {
-          // Add newline character to the previous node
-          const prevNode = adjustedNodes[adjustedNodes.length - 1];
-          if (prevNode && prevNode.children.length > 0) {
-            prevNode.children[prevNode.children.length - 1].text += "\n";
-          }
-        }
-      } else {
-        adjustedNodes.push(node);
-      }
-    }
-    return adjustedNodes;
-  };
+    setReadOnly(true);
+  }, [setReadOnly]);
 
   return (
     <TooltipProvider>
       <DndProvider backend={HTML5Backend}>
         <CommentsProvider users={{}} myUserId="1">
-          <>
-            {htmls && (
-              <Plate
-                editor={editor}
-                plugins={plugins}
-                initialValue={htmls}
-                onChange={setHtml}
-              >
-                <FixedToolbar>
-                  <FixedToolbarButtons />
-                </FixedToolbar>
-                <Editor />
-                <FloatingToolbar>
-                  <FloatingToolbarButtons />
-                </FloatingToolbar>
-                <CommentsPopover />
-              </Plate>
-            )}
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="submit-button-class"
-            >
-              Submit
-            </button>
-          </>
+          <Plate
+            // editor={editor}
+            plugins={plugins}
+            initialValue={editorValue}
+            // onChange={setEditorValue}
+          >
+            {/* <FixedToolbar>
+              <FixedToolbarButtons />
+            </FixedToolbar> */}
+            <Editor disabled={true} />
+            <FloatingToolbar>
+              <FloatingToolbarButtons />
+            </FloatingToolbar>
+            <CommentsPopover />
+          </Plate>
         </CommentsProvider>
       </DndProvider>
     </TooltipProvider>
