@@ -12,12 +12,9 @@ export default async function handler(
   try {
     const result = await sql`
       SELECT
-        id,
-        skill_name,
-        created_at,
-        updated_at
+         *
       FROM
-        Skills;
+        skillstest;
     `;
 
     if (result.length === 0) {
