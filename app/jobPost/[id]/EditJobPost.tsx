@@ -22,6 +22,7 @@ import { EditJobPostSchema, EditJobPostSchemaType } from "../schema";
 import { editor, PlateEditor } from "./PlateEditor";
 import { editJobPost } from "../action";
 import Swal from "sweetalert2";
+import { Skill } from "@/app/dragAndDrop/interface";
 
 // Define an interface for skill
 interface Users {
@@ -35,11 +36,27 @@ interface Users {
 interface EditJobPostFormProps {
   users: any;
   jobPost: any;
+  skill: any;
+}
+
+function flattenSkills(skills: Skill[]): Skill[] {
+  return skills.reduce((acc, skill) => {
+    acc.push(skill);
+    if (skill.children) {
+      acc = acc.concat(flattenSkills(skill.children));
+    }
+    return acc;
+  }, [] as Skill[]);
+}
+
+function formatSkillName(skill_name: string, level: number): string {
+  return "-".repeat(level) + skill_name;
 }
 
 export default function EditJobPostForm({
   users,
   jobPost,
+  skill,
 }: EditJobPostFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -50,6 +67,7 @@ export default function EditJobPostForm({
     post_owner: jobPost[0].post_owner,
     description: jobPost[0].description,
     id: jobPost[0].id,
+    skill_id: jobPost[0].skill_id,
   };
 
   const [description, setDescription] = useState<any>(null);
@@ -69,6 +87,8 @@ export default function EditJobPostForm({
   const { handleSubmit, reset, control, formState } = form;
 
   const { isSubmitting, errors } = formState;
+
+  const flattenedSkills = flattenSkills(skill);
 
   const serializeEditorContent = (editor: any, nodes: any[]) => {
     const nodesWithId = nodes.map((node, index) => ({
@@ -217,7 +237,8 @@ export default function EditJobPostForm({
                 )}
               />
             </div>
-            <div className="w-3/12">
+
+            <div className="w-3/12 mr-4">
               <FormField
                 control={form.control}
                 name="wage"
@@ -236,7 +257,35 @@ export default function EditJobPostForm({
                 )}
               />
             </div>
+            <div className="w-3/12">
+              <FormField
+                control={control}
+                name="skill_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Skill</FormLabel>
+                    <FormControl>
+                      <select
+                        {...field}
+                        value={field.value?.toString() || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        className="p-2 border rounded-md w-full ml-2"
+                      >
+                        <option value="">No Skill</option>
+                        {flattenedSkills.map((skill) => (
+                          <option key={skill.id} value={skill.id.toString()}>
+                            {formatSkillName(skill.skill_name, skill.level)}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
+
           {description && (
             <div>
               Description

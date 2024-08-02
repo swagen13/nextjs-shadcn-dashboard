@@ -23,6 +23,7 @@ import { deserializeHtml, TElement, TText } from "@udecode/plate-common";
 import { serializeHtml } from "@udecode/plate-serializer-html";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import { Skill } from "@/app/dragAndDrop/interface";
 
 // Define an interface for skill
 interface Users {
@@ -35,9 +36,24 @@ interface Users {
 
 interface AddJobPostFormProps {
   users: any[];
+  skill: any[];
 }
 
-export default function AddJobPostForm({ users }: AddJobPostFormProps) {
+function flattenSkills(skills: Skill[]): Skill[] {
+  return skills.reduce((acc, skill) => {
+    acc.push(skill);
+    if (skill.children) {
+      acc = acc.concat(flattenSkills(skill.children));
+    }
+    return acc;
+  }, [] as Skill[]);
+}
+
+function formatSkillName(skill_name: string, level: number): string {
+  return "-".repeat(level) + skill_name;
+}
+
+export default function AddJobPostForm({ users, skill }: AddJobPostFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
   const [description, setDescription] = useState([]);
@@ -57,6 +73,8 @@ export default function AddJobPostForm({ users }: AddJobPostFormProps) {
 
   const { isSubmitting, errors } = formState;
 
+  const flattenedSkills = flattenSkills(skill);
+
   const onSubmit = handleSubmit(async (data: any) => {
     const adjustedNodes = adjustNodes(description);
     const serializedHtml = serializeEditorContent(editor, adjustedNodes);
@@ -65,6 +83,8 @@ export default function AddJobPostForm({ users }: AddJobPostFormProps) {
       ...data,
       description: serializedHtml,
     };
+
+    console.log("jobPostData", jobPostData);
 
     const response = await addJobPost(jobPostData);
 
@@ -211,6 +231,33 @@ export default function AddJobPostForm({ users }: AddJobPostFormProps) {
                         {...field}
                         className="p-2 border rounded-md w-full"
                       />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="w-3/12">
+              <FormField
+                control={form.control}
+                name="skill_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Skill</FormLabel>
+                    <FormControl>
+                      <select
+                        {...field}
+                        value={field.value?.toString() || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        className="p-2 border rounded-md w-full ml-2"
+                      >
+                        <option value="">No Skill</option>
+                        {flattenedSkills.map((skill) => (
+                          <option key={skill.id} value={skill.id.toString()}>
+                            {formatSkillName(skill.skill_name, skill.level)}
+                          </option>
+                        ))}
+                      </select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

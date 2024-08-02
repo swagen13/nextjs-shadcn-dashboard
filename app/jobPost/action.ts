@@ -2,13 +2,7 @@
 
 // postgres connection
 import postgres from "postgres";
-import {
-  EditJobPostSchema,
-  JobPost,
-  JobPostEditSubmission,
-  JobPostSchema,
-  JobPostSubmission,
-} from "./schema";
+import { EditJobPostSchema, JobPostSchema } from "./schema";
 let sql = postgres(process.env.DATABASE_URL || process.env.POSTGRES_URL!, {
   ssl: "allow",
 });
@@ -28,6 +22,7 @@ export async function getJobPost(page: number, limit: number, name?: string) {
           jp.job_title,
           jp.wage,
           jp.post_owner,
+          jp.skill_id,
           jp.show,
           jp.description,
           jp.created_at,
@@ -60,6 +55,7 @@ export async function getJobPost(page: number, limit: number, name?: string) {
           jp.job_title,
           jp.wage,
           jp.post_owner,
+          jp.skill_id,
           jp.show,
           jp.created_at,
           jp.updated_at,
@@ -112,7 +108,8 @@ export async function addJobPost(jobPost: any) {
     // Validate the jobPost object using the schema
     JobPostSchema.parse(jobPost);
 
-    const { job_title, wage, post_owner, show, description } = jobPost;
+    const { job_title, wage, post_owner, show, description, skill_id } =
+      jobPost;
     const currentTime = new Date().toISOString(); // Get the current time in ISO format
 
     console.log("jobPost", jobPost);
@@ -121,8 +118,8 @@ export async function addJobPost(jobPost: any) {
     await sql.begin(async (sql) => {
       // Insert into JobPosts table and get the inserted job post id
       const result = await sql`
-        INSERT INTO jobposts (job_title, wage, post_owner, show,description, created_at, updated_at)
-        VALUES (${job_title}, ${wage}, ${post_owner}, ${show}, ${description}, ${currentTime}, ${currentTime})
+        INSERT INTO jobposts (job_title, wage, post_owner, skill_id, show, description, created_at, updated_at)
+        VALUES (${job_title}, ${wage}, ${post_owner}, ${skill_id}, ${show}, ${description}, ${currentTime}, ${currentTime})
         RETURNING id;
       `;
       const jobPostId = result[0].id;
@@ -170,6 +167,7 @@ export async function getJobPostById(jobPostId: number) {
           job_title,
           wage,
           post_owner,
+          skill_id,
           show,
           description,
           created_at,
@@ -192,7 +190,8 @@ export async function editJobPost(jobPost: any) {
     // Validate the jobPost object using the schema
     EditJobPostSchema.parse(jobPost);
 
-    const { id, job_title, wage, post_owner, show, description } = jobPost;
+    const { id, job_title, wage, post_owner, show, description, skill_id } =
+      jobPost;
     const currentTime = new Date().toISOString(); // Get the current time in ISO format
     console.log("jobPost:", jobPost);
 
@@ -204,6 +203,7 @@ export async function editJobPost(jobPost: any) {
         job_title = ${job_title},
         wage = ${wage},
         post_owner = ${post_owner},
+        skill_id = ${skill_id},
         show = ${show},
         description = ${description},
         updated_at = ${currentTime}

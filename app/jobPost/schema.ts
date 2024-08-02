@@ -9,7 +9,8 @@ export interface JobPost {
   post_owner: string;
   created_at: Date;
   updated_at: Date;
-  descriptions: JobPostDescription[]; // Add this line to include descriptions
+  descriptions: JobPostDescription[];
+  skill_id: string; // Change this line to string
 }
 
 export interface JobPostSubmission {
@@ -18,7 +19,9 @@ export interface JobPostSubmission {
   wage: string;
   post_owner: string;
   descriptions: { description: string }[];
+  skill_id: string; // Change this line to string
 }
+
 export interface JobPostEditSubmission {
   id: number;
   show: boolean;
@@ -26,6 +29,7 @@ export interface JobPostEditSubmission {
   wage: string;
   post_owner: string;
   description: any;
+  skill_id: string; // Change this line to string
 }
 
 // Interface for JobPostDescription table
@@ -52,10 +56,12 @@ export const JobPostSchema = z.object({
   post_owner: z.string().min(1, {
     message: "Post owner is required",
   }),
+  skill_id: z.string().optional(), // Change this line to string
   descriptions: z.array(JobPostDescriptionSchema).nonempty({
     message: "At least one description is required",
   }),
 });
+
 export type JobPostSchemaType = z.infer<typeof JobPostSchema>;
 
 export const EditJobPostSchema = z.object({
@@ -71,6 +77,9 @@ export const EditJobPostSchema = z.object({
     message: "Post owner is required",
   }),
   description: z.any(),
+  skill_id: z.string().min(1, {
+    message: "Skill ID is required",
+  }), // Change this line to string
 });
 
 export type EditJobPostSchemaType = z.infer<typeof EditJobPostSchema>;

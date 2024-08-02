@@ -1,3 +1,4 @@
+import { getSkills } from "@/app/dragAndDrop/action";
 import { getJobPostById, getUsers } from "../action";
 import EditJobPostForm from "./EditJobPost";
 
@@ -8,6 +9,7 @@ interface EditSkillPageProps {
 export default async function PostJobSkillPage({ params }: EditSkillPageProps) {
   const job_post = await getJobPostById(params.id);
   const users = await getUsers();
+  const skills = await getSkills();
 
   if (!job_post) {
     return (
@@ -25,7 +27,7 @@ export default async function PostJobSkillPage({ params }: EditSkillPageProps) {
       <div className="flex flex-row justify-between">
         <h1 className="text-2xl font-bold">Edit Skill</h1>
       </div>
-      <EditJobPostForm jobPost={job_post} users={users} />
+      <EditJobPostForm jobPost={job_post} users={users} skill={skills} />
     </div>
   );
 }
