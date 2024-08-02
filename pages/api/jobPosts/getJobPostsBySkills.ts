@@ -1,6 +1,7 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from "next";
 import postgres from "postgres";
 
+// Initialize the connection to the database
 const sql = postgres(process.env.DATABASE_URL || process.env.POSTGRES_URL!, {
   ssl: "allow",
 });
@@ -9,26 +10,21 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  // Parse the skill_ids query parameter
+  const { skill_ids } = req.query;
+
+  // If skill_ids is not provided, return a bad request response
+  if (!skill_ids || typeof skill_ids !== "string") {
+    return res
+      .status(400)
+      .json({ error: "skill_ids query parameter is required" });
+  }
+
+  // Split the skill_ids string into an array of strings
+  const skillIdsArray = skill_ids.split(",").map((id) => id.toString());
+
   try {
-    if (req.method !== "GET") {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
-
-    // Extract skill_ids from query parameters
-    const { skill_ids } = req.query;
-
-    if (!skill_ids) {
-      return res
-        .status(400)
-        .json({ error: "skill_ids query parameter is required" });
-    }
-
-    // Convert skill_ids to an array of numbers
-    const skillIdsArray = Array.isArray(skill_ids)
-      ? skill_ids
-      : skill_ids.split(",");
-
-    // Query the database
+    // Perform the SQL query
     const result = await sql`
       SELECT
         jp.id,
@@ -46,14 +42,15 @@ export default async function handler(
       LEFT JOIN
         users u ON jp.post_owner::integer = u.id
       WHERE
-        jp.skill_id = ANY(${sql(skillIdsArray)})
+        jp.skill_id = ANY(${sql.array(skillIdsArray)}::text[])
       GROUP BY
         jp.id, u.username;
     `;
 
+    // Return the result as a JSON response
     return res.status(200).json(result);
   } catch (error) {
-    console.error("Error fetching job posts:", error);
+    console.error("Error fetching job posts by skill IDs:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
