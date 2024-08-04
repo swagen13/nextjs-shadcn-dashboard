@@ -368,7 +368,7 @@ const initialValue = [
 ];
 
 const initialValueHTML =
-  '<div><div contenteditable="false"><div><div><div data-key="jart1" draggable="true"></div></div></div></div><div><div class="slate-p" placeholder="Type a paragraph">sdasd</div></div></div><div><div contenteditable="false"><div><div><div data-key="i6p7k" draggable="true"></div></div></div></div><div><div class="slate-p" placeholder="Type a paragraph">asd</div></div></div><div><div contenteditable="false"><div><div><div data-key="a2491" draggable="true"></div></div></div></div><div><div class="slate-p" placeholder="Type a paragraph"></div></div></div><div><div contenteditable="false"><div><div><div data-key="fikw6" draggable="true"></div></div></div></div><div><div class="slate-p" placeholder="Type a paragraph">asd</div></div></div>';
+  '<div><div contenteditable="false"><div><div><div draggable="true"></div></div></div></div><div><div class="slate-p" placeholder="Type a paragraph">descrptionasdasd<br /><br /><br /><br />asdasdasd</div></div></div>';
 
 export default function PlateEditor() {
   const [htmls, setHtml] = useState<any>(null);

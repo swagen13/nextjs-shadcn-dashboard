@@ -164,8 +164,12 @@ export default function EditJobPostForm({
 
   const onSubmit = handleSubmit(async (data: any) => {
     const adjustedNodes = adjustNodes(description);
-    const serializedHtml = serializeEditorContent(editor, adjustedNodes);
-
+    const serializedHtml = serializeHtml(editor, {
+      nodes: adjustedNodes,
+      dndWrapper: (props) => <DndProvider backend={HTML5Backend} {...props} />,
+      convertNewLinesToHtmlBr: true,
+      stripWhitespace: false,
+    });
     const jobPostData = {
       ...data,
       description: serializedHtml,
