@@ -61,11 +61,10 @@ export default function AddJobPostForm({ users, skill }: AddJobPostFormProps) {
   const form = useForm<JobPostSchemaType>({
     resolver: zodResolver(JobPostSchema),
     defaultValues: {
-      show: false,
+      show: "false",
       job_title: "",
       wage: "",
       post_owner: "",
-      descriptions: [{ description: "" }],
     },
   });
 
@@ -277,10 +276,10 @@ export default function AddJobPostForm({ users, skill }: AddJobPostFormProps) {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 mt-2 ml-4">
                     <FormControl>
-                      <Checkbox
+                      {/* <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                      />
+                      /> */}
                     </FormControl>
                     <FormLabel>Show Post</FormLabel>
                     <FormMessage />
