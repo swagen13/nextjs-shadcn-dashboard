@@ -50,6 +50,7 @@ export const ImageUploadToolbarButton = () => {
         onChange={handleUpload}
       />
       <Button
+        type="button" // Ensure this is a button, not a submit button
         onClick={() => inputRef.current?.click()}
         title="Upload Image"
         className="bg-white text-black hover:bg-gray-50"

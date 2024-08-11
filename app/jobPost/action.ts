@@ -7,6 +7,34 @@ let sql = postgres(process.env.DATABASE_URL || process.env.POSTGRES_URL!, {
   ssl: "allow",
 });
 
+export async function editJobPost(
+  prevState: { message: string },
+  formData: FormData
+) {
+  try {
+    const { id, job_title, wage, post_owner, show, description, skill_id } =
+      EditJobPostSchema.parse(Object.fromEntries(formData));
+
+    console.log("id:", id);
+    console.log("show:", show);
+    console.log("description:", description);
+    console.log("typeof description:", typeof description);
+    console.log("job_title:", job_title);
+    console.log("wage:", wage);
+    console.log("post_owner:", post_owner);
+    console.log("skill_id:", skill_id);
+    return {
+      message: "Please implement the editJobPost function",
+      status: true,
+    };
+
+    // Perform update operations here
+  } catch (error) {
+    console.error("Error editing job post:", error);
+    return { message: "Error editing job post", status: false };
+  }
+}
+
 export async function getJobPost(page: number, limit: number, name?: string) {
   if (!page) page = 1;
   if (!limit) limit = 10;
@@ -185,46 +213,46 @@ export async function getJobPostById(jobPostId: number) {
   }
 }
 
-export async function editJobPost(jobPost: any) {
-  try {
-    // Validate the jobPost object using the schema
-    EditJobPostSchema.parse(jobPost);
+// export async function editJobPost(jobPost: FormData) {
+//   try {
+//     const { id, job_title, wage, post_owner, show, description, skill_id } =
+//       EditJobPostSchema.parse(Object.fromEntries(jobPost));
 
-    const { id, job_title, wage, post_owner, show, description, skill_id } =
-      jobPost;
-    const currentTime = new Date().toISOString(); // Get the current time in ISO format
-    console.log("jobPost:", jobPost);
+//     // const currentTime = new Date().toISOString(); // Get the current time in ISO format
+//     console.log("id:", id);
+//     console.log("show:", show);
+//     console.log("description:", description);
 
-    await sql.begin(async (sql) => {
-      // Update JobPosts table
-      const result = await sql`
-      UPDATE jobposts
-      SET
-        job_title = ${job_title},
-        wage = ${wage},
-        post_owner = ${post_owner},
-        skill_id = ${skill_id},
-        show = ${show},
-        description = ${description},
-        updated_at = ${currentTime}
-      WHERE id = ${id}
-    `;
+//     // await sql.begin(async (sql) => {
+//     //   // Update JobPosts table
+//     //   const result = await sql`
+//     //   UPDATE jobposts
+//     //   SET
+//     //     job_title = ${job_title},
+//     //     wage = ${wage},
+//     //     post_owner = ${post_owner},
+//     //     skill_id = ${skill_id},
+//     //     show = ${show},
+//     //     description = ${description},
+//     //     updated_at = ${currentTime}
+//     //   WHERE id = ${id}
+//     // `;
 
-      console.log(result);
-    });
+//     //   console.log(result);
+//     // });
 
-    return {
-      message: "Job post edited successfully",
-      status: true,
-    };
-  } catch (error) {
-    console.error("Error editing job post:", error);
-    return {
-      message: "Error editing job post",
-      status: false,
-    };
-  }
-}
+//     return {
+//       message: "Job post edited successfully",
+//       status: true,
+//     };
+//   } catch (error) {
+//     console.error("Error editing job post:", error);
+//     return {
+//       message: "Error editing job post",
+//       status: false,
+//     };
+//   }
+// }
 
 export async function deletePostJob(postId: number) {
   try {

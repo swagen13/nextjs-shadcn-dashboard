@@ -30,7 +30,7 @@ import {
 import Swal from "sweetalert2";
 import { deletePostJob, handlerShowJobPost } from "../action";
 import { DescriptionsModal } from "../modal/descriptionsModal";
-import { JobPost, JobPostDescription } from "../schema";
+import { JobPost } from "../schema";
 
 interface DataTableProps<TData extends JobPost, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -244,10 +244,10 @@ export function JobPostDataTable<TData extends JobPost, TValue>({
   const handleOpenDescription = (postId: number) => {
     const post = data.find((p: JobPost) => p.id === postId);
     if (post) {
-      const descriptions = post.descriptions
-        .map((desc: JobPostDescription) => desc.description)
-        .join(", ");
-      setSelectedDescription(descriptions);
+      // const descriptions = post.descriptions
+      //   .map((desc: JobPostDescription) => desc.description)
+      //   .join(", ");
+      // setSelectedDescription(descriptions);
       setModalIsOpen(true);
     }
   };

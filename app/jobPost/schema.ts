@@ -3,40 +3,35 @@ import { z } from "zod";
 // Interface for JobPosts table
 export interface JobPost {
   id: number;
-  show: boolean;
+  show: string; // updated to match character varying type
   job_title: string;
   wage: string;
   post_owner: string;
-  created_at: Date;
-  updated_at: Date;
-  descriptions: JobPostDescription[];
-  skill_id: string; // Change this line to string
+  created_at: string; // or Date, depending on how you handle timestamps in your application
+  updated_at: string; // or Date, depending on how you handle timestamps in your application
+  description: any; // updated to match jsonb type
+  skill_id: string; // updated to match character varying type
 }
 
+// Interface for JobPostSubmission
 export interface JobPostSubmission {
-  show: boolean;
+  show: string; // updated to match character varying type
   job_title: string;
   wage: string;
   post_owner: string;
-  descriptions: { description: string }[];
-  skill_id: string; // Change this line to string
+  description: { description: string }[]; // Assuming the JSON contains an array of description objects
+  skill_id: string; // updated to match character varying type
 }
 
+// Interface for JobPostEditSubmission
 export interface JobPostEditSubmission {
   id: number;
-  show: boolean;
+  show: string; // updated to match character varying type
   job_title: string;
   wage: string;
   post_owner: string;
-  description: any;
-  skill_id: string; // Change this line to string
-}
-
-// Interface for JobPostDescription table
-export interface JobPostDescription {
-  id: number;
-  description: string;
-  jobpost_id: number;
+  description: any; // updated to match jsonb type
+  skill_id: string; // updated to match character varying type
 }
 
 // Schema for JobPostDescription
@@ -46,40 +41,29 @@ const JobPostDescriptionSchema = z.object({
 
 // Schema for JobPost
 export const JobPostSchema = z.object({
-  show: z.boolean(),
-  job_title: z.string().min(1, {
-    message: "Job title is required",
-  }),
-  wage: z.string().min(1, {
-    message: "Wage is required",
-  }),
-  post_owner: z.string().min(1, {
-    message: "Post owner is required",
-  }),
-  skill_id: z.string().optional(), // Change this line to string
-  descriptions: z.array(JobPostDescriptionSchema).nonempty({
-    message: "At least one description is required",
-  }),
+  show: z.string().min(1, { message: "Show is required" }), // updated to match character varying type
+  job_title: z.string().min(1, { message: "Job title is required" }),
+  wage: z.string().min(1, { message: "Wage is required" }),
+  post_owner: z.string().min(1, { message: "Post owner is required" }),
+  description: z
+    .array(JobPostDescriptionSchema)
+    .nonempty({ message: "At least one description is required" }), // updated to match jsonb type
+  skill_id: z.string().min(1, { message: "Skill ID is required" }), // updated to match character varying type
 });
 
+// Type for JobPostSchema
 export type JobPostSchemaType = z.infer<typeof JobPostSchema>;
 
+// Schema for editing a JobPost
 export const EditJobPostSchema = z.object({
-  id: z.number(),
-  show: z.boolean(),
-  job_title: z.string().min(1, {
-    message: "Job title is required",
-  }),
-  wage: z.string().min(1, {
-    message: "Wage is required",
-  }),
-  post_owner: z.string().min(1, {
-    message: "Post owner is required",
-  }),
+  id: z.preprocess((val) => parseInt(val as string, 10), z.number()), // แปลง string เป็น number ก่อนการ validate
+  show: z.string().min(1, { message: "Show is required" }), // updated to match character varying type
+  job_title: z.string().min(1, { message: "Job title is required" }),
+  wage: z.string().min(1, { message: "Wage is required" }),
+  post_owner: z.string().min(1, { message: "Post owner is required" }),
   description: z.any(),
-  skill_id: z.string().min(1, {
-    message: "Skill ID is required",
-  }), // Change this line to string
+  skill_id: z.string().min(1, { message: "Skill ID is required" }), // updated to match character varying type
 });
 
+// Type for EditJobPostSchema
 export type EditJobPostSchemaType = z.infer<typeof EditJobPostSchema>;

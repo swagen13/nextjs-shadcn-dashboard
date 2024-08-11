@@ -1,25 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
-import Swal from "sweetalert2";
-import { getUserProfile, updateUserProfile } from "../users/action";
 import Spinner from "@/components/Spinner";
-import { ProfileSchema, ProfileSchemaType } from "./schema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import Swal from "sweetalert2";
+import { updateUserProfile } from "../users/action";
+import { ProfileSchema, ProfileSchemaType } from "./schema";
 
 interface User {
   createdAt: string;

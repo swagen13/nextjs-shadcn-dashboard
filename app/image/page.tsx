@@ -2,12 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import imageCompression from "browser-image-compression";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { UploadImage } from "../users/action";
 import Swal from "sweetalert2";
-import Image from "next/image";
+import { UploadImage } from "../users/action";
 
 const initialState = {
   message: "",
