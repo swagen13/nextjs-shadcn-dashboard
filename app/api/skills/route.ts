@@ -25,12 +25,15 @@ interface SkillData {
 export async function GET(request: Request) {
   try {
     const result = await sql`
-    WITH RECURSIVE SkillHierarchy AS (
+   WITH RECURSIVE SkillHierarchy AS (
           SELECT
             id,
             name,
             parent_id,
             sequence,
+            color,
+            description,
+            icon,
             CASE
               WHEN parent_id IS NULL OR parent_id = '' THEN 0
               ELSE COALESCE(
@@ -48,6 +51,9 @@ export async function GET(request: Request) {
             s.name,
             s.parent_id,
             s.sequence,
+            s.color,
+            s.description,
+            s.icon,
             sh.level + 1 AS level
           FROM
             skills s
@@ -59,6 +65,9 @@ export async function GET(request: Request) {
           sh.parent_id,
           sh.sequence,
           sh.level,
+          sh.color,
+          sh.description,
+          sh.icon,
           st.locale,
           st.name as translation_name
         FROM
