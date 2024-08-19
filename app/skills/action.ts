@@ -1,5 +1,5 @@
 "use server";
-import { EditSkillSchema, SkillSchema } from "./schema";
+import { EditSkillSchema, SkillData, SkillSchema } from "./schema";
 
 // postgres connection
 import postgres from "postgres";
@@ -11,47 +11,58 @@ export async function getSkills(page: number, limit: number, name?: string) {
   if (!page) page = 1;
   if (!limit) limit = 10;
 
-  if (name) {
-    console.log("name", name);
-  }
+  const offset = (page - 1) * limit;
 
   try {
-    const offset = (page - 1) * limit; // Calculate OFFSET
     let query;
-
-    // Add WHERE clause if name is provided
     if (name && name.trim() !== "") {
       query = sql`
         WITH RECURSIVE SkillHierarchy AS (
           SELECT
             id,
-            skill_name,
+            name,
             parent_id,
             sequence,
-            0 AS level
+            CASE
+              WHEN parent_id IS NULL OR parent_id = '' THEN 0
+              ELSE COALESCE(
+                LENGTH(sequence) - LENGTH(REPLACE(sequence, '.', '')) - 1, 
+                0
+              )
+            END AS level
           FROM
-            skillstest
-          WHERE
-            parent_id IS NULL
+            skills
+          WHERE 
+            parent_id IS NULL OR parent_id = ''
           UNION ALL
           SELECT
             s.id,
-            s.skill_name,
+            s.name,
             s.parent_id,
             s.sequence,
             sh.level + 1 AS level
           FROM
-            skillstest s
-          INNER JOIN SkillHierarchy sh ON s.parent_id::INTEGER = sh.id
+            skills s
+          INNER JOIN SkillHierarchy sh ON s.parent_id = sh.id
         )
         SELECT
-          *
+          sh.id,
+          sh.name,
+          sh.parent_id,
+          sh.sequence,
+          sh.level,
+          st.locale,
+          st.name as translation_name
         FROM
-          SkillHierarchy
+          SkillHierarchy sh
+        LEFT JOIN
+          skill_translations st
+        ON
+          sh.id = st.skill_id
         WHERE
-          skill_name LIKE ${"%" + name + "%"}
+          sh.name ILIKE ${"%" + name + "%"}
         ORDER BY
-          sequence ASC
+          sh.sequence ASC
         LIMIT ${limit + 1}
         OFFSET ${offset};
       `;
@@ -60,37 +71,54 @@ export async function getSkills(page: number, limit: number, name?: string) {
         WITH RECURSIVE SkillHierarchy AS (
           SELECT
             id,
-            skill_name,
+            name,
             parent_id,
             sequence,
-            0 AS level
+            CASE
+              WHEN parent_id IS NULL OR parent_id = '' THEN 0
+              ELSE COALESCE(
+                LENGTH(sequence) - LENGTH(REPLACE(sequence, '.', '')) - 1, 
+                0
+              )
+            END AS level
           FROM
-            skillstest
-          WHERE
-            parent_id IS NULL
+            skills
+          WHERE 
+            parent_id IS NULL OR parent_id = ''
           UNION ALL
           SELECT
             s.id,
-            s.skill_name,
+            s.name,
             s.parent_id,
             s.sequence,
             sh.level + 1 AS level
           FROM
-            skillstest s
-          INNER JOIN SkillHierarchy sh ON s.parent_id::INTEGER = sh.id
+            skills s
+          INNER JOIN SkillHierarchy sh ON s.parent_id = sh.id
         )
         SELECT
-          *
+          sh.id,
+          sh.name,
+          sh.parent_id,
+          sh.sequence,
+          sh.level,
+          st.locale,
+          st.name as translation_name
         FROM
-          SkillHierarchy
+          SkillHierarchy sh
+        LEFT JOIN
+          skill_translations st
+        ON
+          sh.id = st.skill_id
         ORDER BY
-          sequence ASC
+          sh.sequence ASC
         LIMIT ${limit + 1}
         OFFSET ${offset};
       `;
     }
 
     const result = await query;
+    console.log("result", result);
 
     return result;
   } catch (error) {
@@ -99,36 +127,120 @@ export async function getSkills(page: number, limit: number, name?: string) {
   }
 }
 
-// addSkill a new skill
-export async function addSkill(formData: FormData) {
-  const { skill_name, parent_id, sequence } = SkillSchema.parse(
-    Object.fromEntries(formData)
-  );
+export async function addSkill(prevState: any, formData: FormData) {
+  // Convert FormData to Object
+  const formDataObj = Object.fromEntries(formData.entries());
 
-  const skill = {
-    skill_name,
-    parent_id,
-    sequence,
-    createdat: new Date(),
+  console.log("formDataObj", formDataObj);
+
+  // Convert necessary fields
+  const parsedData = {
+    sequence: formDataObj.sequence
+      ? parseFloat(formDataObj.sequence as string)
+      : null,
   };
 
-  console.log("skill", skill);
+  // Extract translations
+  const translations: any[] = [];
+  for (const key in formDataObj) {
+    if (key.startsWith("translations.")) {
+      const match = key.match(/translations\.(\d+)\.(\w+)/);
+      if (match) {
+        const index = parseInt(match[1], 10);
+        const field = match[2];
+        translations[index] = translations[index] || {};
+        translations[index][field] = formDataObj[key];
+      }
+    }
+  }
+
+  // Determine new sequence if parent_id is not provided or is empty
+  if (!formDataObj.parent_id || formDataObj.parent_id === "") {
+    // Fetch existing sequences for top-level skills
+    const existingSequences = await fetchExistingSequences(); // Implement this function
+
+    // Find the highest existing sequence and determine the new one
+    const highestSequence = existingSequences
+      .filter((seq) => !isNaN(seq))
+      .sort((a, b) => b - a)[0];
+
+    parsedData.sequence = highestSequence ? highestSequence + 1 : 1;
+  }
+
+  // Explicitly type the data object
+  const data: SkillData = {
+    id: null,
+    name: formDataObj.name as string,
+    color: formDataObj.color as string | null,
+    description: formDataObj.description as string | null,
+    icon: formDataObj.icon as string | null,
+    parent_id: formDataObj.parent_id as string | null,
+    sequence: formDataObj.sequence?.toString() || "",
+    slug: formDataObj.slug as string,
+    translations,
+  };
+
+  console.log("data", data);
 
   try {
-    await sql`
-      INSERT INTO
-        skillstest
-        (skill_name, parent_id, sequence, createdat,updatedat)
-      VALUES
-        (${skill.skill_name}, ${skill.parent_id}, ${skill.sequence}, ${skill.createdat},${skill.createdat})
+    // Insert the skill data into the database
+    const skillIdResult = await sql`
+      INSERT INTO skills (
+        name,
+        color,
+        description,
+        icon,
+        parent_id,
+        sequence,
+        slug,
+        created_at,
+        updated_at
+      ) VALUES (
+        ${data.name},
+        ${data.color},
+        ${data.description},
+        ${data.icon},
+        ${data.parent_id},
+        ${data.sequence},
+        ${data.slug},
+        ${new Date().toISOString()},
+        ${new Date().toISOString()}
+      )
+      RETURNING id;
     `;
+    const skillId = skillIdResult[0].id;
 
-    // return success message
+    // Insert the related translations into the database
+    if (translations.length > 0) {
+      await sql`
+        INSERT INTO skill_translations (skill_id, locale, name)
+        VALUES ${sql(translations.map((t) => [skillId, t.locale, t.name]))};
+      `;
+    }
+
     return { message: "Skill created successfully", status: true };
   } catch (error) {
     console.error("Error creating skill:", error);
+    return { message: "Error creating skill", status: false };
+  }
+}
 
-    return { message: "Error creating skill" };
+// Example function to fetch existing sequences
+async function fetchExistingSequences(): Promise<number[]> {
+  try {
+    // Implement your data fetching logic here
+    // For example, a query to get all top-level skills' sequences
+    const result = await sql`
+      SELECT sequence
+      FROM skills
+      WHERE parent_id IS NULL OR parent_id = '';
+    `;
+
+    // Process result to extract sequences
+    return result.map((row: any) => parseFloat(row.sequence) || 0);
+  } catch (error) {
+    console.error("Error fetching existing sequences:", error);
+    return [];
   }
 }
 
@@ -137,15 +249,37 @@ export async function getSkillById(id: string) {
   try {
     const result = await sql`
       SELECT
-        *
+        s.*,
+        st.locale,
+        st.name as translation_name
       FROM
-        skillstest
+        skills s
+      LEFT JOIN
+        skill_translations st
+      ON
+        s.id = st.skill_id
       WHERE
-        id = ${id}
+        s.id = ${id}
     `;
 
     if (result.length) {
-      return result[0];
+      // Group translations under the skill
+      const skillData: SkillData = {
+        id: result[0].id,
+        name: result[0].name,
+        color: result[0].color,
+        description: result[0].description,
+        icon: result[0].icon,
+        parent_id: result[0].parent_id,
+        sequence: result[0].sequence,
+        slug: result[0].slug,
+        translations: result.map((row) => ({
+          locale: row.locale,
+          name: row.translation_name,
+        })),
+      };
+
+      return skillData;
     } else {
       return { message: "Skill not found", status: false };
     }
@@ -156,23 +290,83 @@ export async function getSkillById(id: string) {
 }
 
 // update skill by id
-export async function updateSkill(formData: FormData) {
-  const { id, skill_name } = EditSkillSchema.parse(
-    Object.fromEntries(formData)
-  );
+export async function updateSkill(prevState: any, formData: FormData) {
+  // Convert FormData to Object
+  const formDataObj = Object.fromEntries(formData.entries());
+
+  console.log("formDataObj", formDataObj);
+
+  // Convert necessary fields
+  const parsedData = {
+    sequence: formDataObj.sequence
+      ? parseInt(formDataObj.sequence as string, 10)
+      : null,
+  };
+
+  // Extract translations
+  const translations: any[] = [];
+  for (const key in formDataObj) {
+    if (key.startsWith("translations.")) {
+      const match = key.match(/translations\.(\d+)\.(\w+)/);
+      if (match) {
+        const index = parseInt(match[1], 10);
+        const field = match[2];
+        translations[index] = translations[index] || {};
+        translations[index][field] = formDataObj[key];
+      }
+    }
+  }
+
+  // Explicitly type the data object
+  const data: SkillData = {
+    id: formDataObj.id as string,
+    name: formDataObj.name as string,
+    color: formDataObj.color as string | null,
+    description: formDataObj.description as string | null,
+    icon: formDataObj.icon as string | null,
+    parent_id: formDataObj.parent_id as string | null,
+    sequence: parsedData.sequence?.toString() || "",
+    slug: formDataObj.slug as string,
+    translations,
+  };
+
+  console.log("data", data);
 
   const updatedat = new Date();
 
   try {
-    const result = await sql`
+    // Update the skill data in the database
+    await sql`
       UPDATE
-        skillstest
+        skills
       SET
-        skill_name = ${skill_name},
-        updatedat = ${updatedat}
+        name = ${data.name},
+        color = ${data.color},
+        description = ${data.description},
+        icon = ${data.icon},
+        parent_id = ${data.parent_id},
+        sequence = ${data.sequence},
+        slug = ${data.slug},
+        updated_at = ${updatedat}
       WHERE
-        id = ${id}
+        id = ${data.id};
     `;
+
+    // Delete existing translations
+    await sql`
+      DELETE FROM
+        skill_translations
+      WHERE
+        skill_id = ${data.id};
+    `;
+
+    // Insert the related translations into the database
+    if (translations.length > 0) {
+      await sql`
+        INSERT INTO skill_translations (skill_id, locale, name)
+        VALUES ${sql(translations.map((t) => [data.id, t.locale, t.name]))};
+      `;
+    }
 
     return { message: "Skill updated successfully", status: true };
   } catch (error) {
@@ -184,16 +378,98 @@ export async function updateSkill(formData: FormData) {
 // delete skill by id
 export async function deleteSkill(id: string) {
   try {
-    await sql`
-      DELETE FROM
-        skillstest
-      WHERE
-        id = ${id}
-    `;
+    // Start a transaction
+    await sql.begin(async (transaction) => {
+      // Delete from the skill_translations table
+      await transaction`
+        DELETE FROM skill_translations
+        WHERE skill_id = ${id}
+      `;
+
+      // Delete from the skills table
+      await transaction`
+        DELETE FROM skills
+        WHERE id = ${id}
+      `;
+    });
 
     return { message: "Skill deleted successfully", status: true };
   } catch (error) {
     console.error("Error deleting skill:", error);
-    return { message: "Error deleting skill" };
+    return { message: "Error deleting skill", status: false };
   }
+}
+// select * from skills
+export async function getAllSkills() {
+  try {
+    const result = await sql`
+  WITH RECURSIVE SkillHierarchy AS (
+          SELECT
+            id,
+            name,
+            parent_id,
+            sequence,
+            CASE
+              WHEN parent_id IS NULL OR parent_id = '' THEN 0
+              ELSE COALESCE(
+                LENGTH(sequence) - LENGTH(REPLACE(sequence, '.', '')) - 1, 
+                0
+              )
+            END AS level
+          FROM
+            skills
+          WHERE 
+            parent_id IS NULL OR parent_id = ''
+          UNION ALL
+          SELECT
+            s.id,
+            s.name,
+            s.parent_id,
+            s.sequence,
+            sh.level + 1 AS level
+          FROM
+            skills s
+          INNER JOIN SkillHierarchy sh ON s.parent_id = sh.id
+        )
+        SELECT
+          sh.id,
+          sh.name,
+          sh.parent_id,
+          sh.sequence,
+          sh.level,
+          st.locale,
+          st.name as translation_name
+        FROM
+          SkillHierarchy sh
+        LEFT JOIN
+          skill_translations st
+        ON
+          sh.id = st.skill_id
+        ORDER BY
+          sh.sequence ASC;
+    `;
+
+    // Use this function when processing data
+    const skillData: SkillData[] = transformToSkillData(result);
+
+    return skillData;
+  } catch (error) {
+    console.error("Error fetching skillssss:", error);
+    return [];
+  }
+}
+
+function transformToSkillData(rawData: any[]): SkillData[] {
+  return rawData.map((item) => ({
+    id: item.id || null,
+    name: item.name || "",
+    color: item.color || null,
+    description: item.description || null,
+    icon: item.icon || null,
+    parent_id: item.parent_id || null,
+    sequence: item.sequence || null,
+    slug: item.slug || "",
+    translations: item.translations || [],
+    level: item.level || 0, // Default or calculate if needed
+  }));
 }

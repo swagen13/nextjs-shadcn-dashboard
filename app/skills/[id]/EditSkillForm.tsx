@@ -1,6 +1,4 @@
 "use client";
-import Spinner from "@/components/Spinner";
-import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -11,95 +9,443 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User } from "lucide-react";
-import { useEffect, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ColorPicker, useColor } from "react-color-palette";
+import "react-color-palette/css";
+import { useFormState, useFormStatus } from "react-dom";
+import { useForm, useWatch } from "react-hook-form";
+import { addSkill, updateSkill } from "../action";
+import { SkillData, SkillSchema, SkillSchemaType } from "../schema";
 import Swal from "sweetalert2";
-import { EditSkillSchema, EditSkillSchemaType } from "../schema";
-import { updateSkill } from "../action";
 
 const initialState = {
   message: "",
   status: false,
 };
 
-export default function EditSkillForm({ skillData }: any) {
+interface EditSkillFormProps {
+  skillData: SkillData;
+  skills: SkillData[];
+}
+
+function flattenSkills(skills: SkillData[]): SkillData[] {
+  return skills.reduce((acc, skill) => {
+    acc.push(skill);
+    if (skill.children) {
+      acc = acc.concat(flattenSkills(skill.children));
+    }
+    return acc;
+  }, [] as SkillData[]);
+}
+
+function formatSkillName(name: string, level: number): string {
+  return "-".repeat(level) + name;
+}
+
+export default function EditSkillForm({
+  skillData,
+  skills,
+}: EditSkillFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
+  const [translations, setTranslations] = useState(
+    skillData.translations || [{ locale: "", name: "" }]
+  );
+  const [sequence, setSequence] = useState(skillData.sequence || 0);
+  const [state, formAction] = useFormState(updateSkill, initialState);
+  const [color, setColor] = useColor(skillData.color || "#561ecb");
+  const [skill, setSkill] = useState<SkillData | null>(skillData);
 
-  useEffect(() => {
-    console.log("skillData", skillData);
-  }, [skillData]);
+  // Ensure the skill data is defined before using it in the form
+  if (!skill) {
+    return <div>Loading...</div>;
+  }
 
-  const form = useForm<EditSkillSchemaType>({
-    resolver: zodResolver(EditSkillSchema),
+  const form = useForm<SkillSchemaType>({
+    resolver: zodResolver(SkillSchema),
     defaultValues: {
-      id: skillData.id.toString(),
-      skill_name: skillData.skill_name,
+      id: skill.id || "",
+      name: skill.name,
+      color: skill.color || "",
+      description: skill.description || "",
+      icon: skill.icon || "",
+      parent_id: skill.parent_id || "",
+      sequence:
+        typeof skill.sequence === "string"
+          ? parseFloat(skill.sequence)
+          : skill.sequence || 0, // Convert sequence to number
+      slug: skill.slug || "",
+      translations: skill.translations.map((t) => ({
+        locale: t.locale,
+        name: t.name,
+      })),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     },
   });
 
-  const { handleSubmit, reset, formState } = form;
-  const { isSubmitting, isValid, errors } = formState;
+  const { handleSubmit, reset, formState, setValue } = form;
+  const { isSubmitting, errors } = formState;
 
-  const onSubmit = handleSubmit(async (data) => {
-    const formData = new FormData();
-    formData.append("skill_name", data.skill_name);
-    formData.append("id", data.id);
+  const flattenedSkills = flattenSkills(skills);
 
-    const response = await updateSkill(formData);
-
-    if (response.status) {
-      Swal.fire({
-        title: "Skill updated successfully",
-        icon: "success",
-      });
-      return false;
-    } else {
-      Swal.fire({
-        title: "Error updating skill",
-        icon: "error",
-      });
+  useEffect(() => {
+    console.log("state", state);
+    if (state.message) {
+      // if status is true display sweet alert
+      if (state.status) {
+        Swal.fire({
+          title: state.message,
+          icon: "success",
+        });
+      } else {
+        Swal.fire({
+          title: state.message,
+          icon: "error",
+        });
+      }
     }
-  });
+  }, [state]);
+
+  const calculateSequence = (parentId: string): string => {
+    // Fetch the parent skill if parentId is provided
+    const parentSkill = parentId
+      ? flattenedSkills.find((skill) => skill.id === parentId)
+      : null;
+    console.log("Parent Skill", parentSkill);
+
+    if (!parentSkill) {
+      throw new Error("Parent skill not found");
+    }
+
+    // Fetch all children skills that have the same parent_id
+    const children = flattenedSkills
+      .filter((skill) => skill.parent_id === parentId)
+      .sort((a: any, b: any) => a.sequence?.localeCompare(b.sequence));
+
+    console.log("Children", children);
+
+    let newSequence: string;
+
+    if (children.length > 0) {
+      // Get the last child's sequence and increment the last part
+      const lastChild = children[children.length - 1];
+      const sequence = lastChild.sequence || "0"; // Default to "0" if sequence is null
+
+      const sequenceParts = sequence.split(".").map(Number);
+
+      // Increment the last part of the sequence
+      sequenceParts[sequenceParts.length - 1] += 1;
+      newSequence = sequenceParts.join(".");
+    } else {
+      // No children found, create a new sequence based on the parent's sequence
+      newSequence = `${parentSkill.sequence}.1`;
+    }
+
+    return newSequence;
+  };
+
+  // Update sequence state when parent_id changes
+  const handleParentIdChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const newParentId = e.target.value;
+
+    console.log("New Parent ID:", newParentId);
+
+    setValue("parent_id", newParentId); // Update form field value
+
+    if (newParentId === "") {
+      // Fetch existing sequences for top-level skills (where parent_id is empty or null)
+      const topLevelSkills = flattenedSkills
+        .filter((skill) => !skill.parent_id || skill.parent_id === "")
+        .sort((a: any, b) => a.sequence?.localeCompare(b.sequence));
+
+      let newSequence: string;
+
+      if (topLevelSkills.length > 0) {
+        // Get the last top-level skill's sequence and increment the last part
+        const lastSkill = topLevelSkills[topLevelSkills.length - 1];
+        const sequence = lastSkill.sequence ?? "0"; // Default to "0" if sequence is null
+        const sequenceParts = sequence.split(".").map(Number);
+
+        // Increment the last part of the sequence
+        sequenceParts[sequenceParts.length - 1] += 1;
+        newSequence = sequenceParts.join(".");
+      } else {
+        // If there are no top-level skills, start with "1"
+        newSequence = "1";
+      }
+
+      console.log("Calculated Sequence for top-level skill:", newSequence);
+
+      setSequence(newSequence); // Store the sequence as a string
+      setValue("sequence", parseFloat(newSequence)); // Store the sequence as a number
+    } else {
+      // Calculate new sequence based on selected parent_id
+      const newSequence = calculateSequence(newParentId);
+
+      console.log("Calculated Sequence:", newSequence);
+
+      setSequence(newSequence); // Store the sequence as a string
+      setValue("sequence", parseFloat(newSequence)); // Store the sequence as a number
+    }
+  };
+
+  // on change of color
+  const handleColorChange = (color: string) => {
+    setValue("color", color);
+  };
+
+  const handleTranslationChange = (
+    index: number,
+    key: string,
+    value: string
+  ) => {
+    console.log("value", value);
+
+    const newTranslations = translations.map((translation, i) => {
+      if (i === index) {
+        return { ...translation, [key]: value };
+      }
+      return translation;
+    });
+
+    setTranslations(newTranslations);
+  };
+  function SubmitButton() {
+    const { pending } = useFormStatus();
+
+    return (
+      <button
+        type="submit"
+        disabled={pending}
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md"
+      >
+        {pending ? "Saving..." : "Save"}
+      </button>
+    );
+  }
 
   return (
     <Form {...form}>
-      <form onSubmit={onSubmit} className="flex flex-wrap -mx-2" ref={formRef}>
-        <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-          <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-            <div className="sm:flex sm:items-start">
-              <div className="mb-4 w-full sm:w-1/2 px-2">
+      <form
+        action={formAction}
+        className="bg-white p-6 rounded-lg shadow-md"
+        ref={formRef}
+      >
+        <div className="flex flex-col gap-6">
+          {/* Top Grid with 3 columns */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+            <div className="hidden">
+              <FormField
+                name="id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>id</FormLabel>
+                    <FormControl>
+                      <Input {...field} className="w-full" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <FormField
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Name" {...field} className="w-full" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="hidden">
+              <FormField
+                name="parent_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parent Skill</FormLabel>
+                    <FormControl>
+                      <select
+                        {...field}
+                        onChange={(e) => handleParentIdChange(e)}
+                        className="p-2 border rounded-md w-full"
+                      >
+                        <option value="">No parent</option>
+                        {flattenedSkills
+                          .filter((skill) => skill.id !== null)
+                          .map((skill) => (
+                            <option
+                              key={skill.id!.toString()}
+                              value={skill.id!.toString()}
+                            >
+                              {formatSkillName(skill.name, skill.level ?? 0)}
+                            </option>
+                          ))}
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              name="icon"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Icon URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Icon URL"
+                      {...field}
+                      className="w-full"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Slug</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Slug" {...field} className="w-full" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="md:col-span-2">
+              {translations.map((translation, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-1 gap-6 md:grid-cols-2"
+                >
+                  <FormField
+                    name={`translations.${index}.locale`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm md:text-md">
+                          Translations Locale
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Locale"
+                            {...field}
+                            className="w-full"
+                            value={translation.locale}
+                            onChange={(e) =>
+                              handleTranslationChange(
+                                index,
+                                "locale",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    name={`translations.${index}.name`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm md:text-md">
+                          Translations Name
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Name"
+                            {...field}
+                            className="w-full"
+                            value={translation.name}
+                            onChange={(e) =>
+                              handleTranslationChange(
+                                index,
+                                "name",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              ))}
+            </div>
+            <FormField
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <textarea
+                      placeholder="Description"
+                      {...field}
+                      className="p-2 border rounded-md w-full"
+                      rows={6}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div>
+              <FormField
+                name="color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Color</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Color"
+                        {...field}
+                        className="w-full"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="hidden">
                 <FormField
-                  control={form.control}
-                  name="skill_name"
+                  name="sequence"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>Color</FormLabel>
                       <FormControl>
-                        <Input placeholder="Name" {...field} />
+                        <Input {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+
+              <div className=" mt-2 ">
+                <ColorPicker
+                  color={color}
+                  onChange={(color) => {
+                    setColor(color);
+                    handleColorChange(color.hex);
+                  }}
+                  hideAlpha
+                  hideInput
+                  height={60}
+                />
+              </div>
             </div>
           </div>
-
-          <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-            <Button
-              type="submit"
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <Spinner size={20} />
-              ) : (
-                <div className="flex items-center justify-center">
-                  Update Skill
-                </div>
-              )}
-            </Button>
-          </div>
+        </div>
+        <div className="px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+          <SubmitButton />
         </div>
       </form>
     </Form>

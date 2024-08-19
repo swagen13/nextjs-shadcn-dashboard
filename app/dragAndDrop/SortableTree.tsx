@@ -41,18 +41,18 @@ import Swal from "sweetalert2";
 const initialItems: TreeItems = [
   {
     id: "1",
-    skill_name: "Skill 1",
+    name: "Skill 1",
     collapsed: false,
     children: [
       {
         id: "1.1",
-        skill_name: "Sub-skill 1.1",
+        name: "Sub-skill 1.1",
         collapsed: false,
         children: [],
       },
       {
         id: "1.2",
-        skill_name: "Sub-skill 1.2",
+        name: "Sub-skill 1.2",
         collapsed: false,
         children: [],
       },
@@ -60,7 +60,7 @@ const initialItems: TreeItems = [
   },
   {
     id: "2",
-    skill_name: "Skill 2",
+    name: "Skill 2",
     collapsed: false,
     children: [],
   },
@@ -175,24 +175,22 @@ export function SortableTree({
             items={sortedIds}
             strategy={verticalListSortingStrategy}
           >
-            {flattenedItems.map(
-              ({ id, children, collapsed, depth, skill_name }) => (
-                <SortableTreeItem
-                  seeMore={() => handleSeeMore(id)}
-                  key={id}
-                  id={id}
-                  value={skill_name!}
-                  depth={id === activeId && projected ? projected.depth : depth}
-                  indentationWidth={indentationWidth}
-                  indicator={indicator}
-                  collapsed={Boolean(collapsed && children.length)}
-                  onCollapse={
-                    children.length ? () => handleCollapse(id) : undefined
-                  }
-                  onRemove={removable ? () => handleRemove(id) : undefined}
-                />
-              )
-            )}
+            {flattenedItems.map(({ id, children, collapsed, depth, name }) => (
+              <SortableTreeItem
+                seeMore={() => handleSeeMore(id)}
+                key={id}
+                id={id}
+                value={name!}
+                depth={id === activeId && projected ? projected.depth : depth}
+                indentationWidth={indentationWidth}
+                indicator={indicator}
+                collapsed={Boolean(collapsed && children.length)}
+                onCollapse={
+                  children.length ? () => handleCollapse(id) : undefined
+                }
+                onRemove={removable ? () => handleRemove(id) : undefined}
+              />
+            ))}
             <DragOverlay
               dropAnimation={dropAnimation}
               modifiers={indicator ? [adjustTranslate] : undefined}
@@ -203,7 +201,7 @@ export function SortableTree({
                   depth={activeItem.depth}
                   clone
                   childCount={getChildCount(items, activeId) + 1}
-                  value={activeItem.skill_name!}
+                  value={activeItem.name!}
                   indentationWidth={indentationWidth}
                 />
               ) : null}
@@ -254,6 +252,8 @@ export function SortableTree({
     // // flatten the skills list
     const flattenedSkills = flattenSkills(items);
 
+    console.log("flattenedSkills", flattenedSkills);
+
     const result = await updateSkillList(flattenedSkills);
     if (result) {
       if (result.status) {
@@ -272,8 +272,8 @@ export function SortableTree({
     console.log("handleSeeMore", { parent });
 
     Swal.fire({
-      title: parent?.skill_name,
-      html: `<input id="swal-input1" class="swal2-input" value="${parent?.skill_name}">`,
+      title: parent?.name,
+      html: `<input id="swal-input1" class="swal2-input" value="${parent?.name}">`,
     });
   }
 
@@ -286,7 +286,7 @@ export function SortableTree({
     const activeItem = flattenedItems.find(({ id }) => id === activeId);
 
     if (activeItem) {
-      setSkillName(activeItem.skill_name!);
+      setSkillName(activeItem.name!);
     }
 
     if (activeItem) {

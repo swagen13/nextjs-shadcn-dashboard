@@ -1,4 +1,4 @@
-import { getSkillById } from "../action";
+import { getAllSkills, getSkillById } from "../action";
 import EditSkillForm from "./EditSkillForm";
 
 interface EditSkillPageProps {
@@ -7,9 +7,11 @@ interface EditSkillPageProps {
 
 export default async function EditSkillPage({ params }: EditSkillPageProps) {
   const skillData = await getSkillById(params.id);
+  const skills = await getAllSkills();
 
-  if (!skillData) {
-    return <div>Skill not found</div>;
+  if (!skillData || "message" in skillData) {
+    // Handle loading errors
+    return <div>Error loading skill data , please try again later.</div>;
   }
 
   return (
@@ -17,7 +19,7 @@ export default async function EditSkillPage({ params }: EditSkillPageProps) {
       <div className="flex flex-row justify-between">
         <h1 className="text-2xl font-bold">Edit Skill</h1>
       </div>
-      <EditSkillForm skillData={skillData} />
+      <EditSkillForm skillData={skillData} skills={skills} />
     </div>
   );
 }

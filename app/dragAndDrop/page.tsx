@@ -1,9 +1,8 @@
 // DragAndDropPage.tsx
-import React, { StrictMode } from "react";
+// import { getSkills } from "./action";
 import { getSkills } from "./action";
 import { SortableTree } from "./SortableTree";
-import { TreeItem, TreeItems } from "./types";
-import { buildTree } from "./utilities";
+import { TreeItems } from "./types";
 
 interface SkillsPageProps {
   searchParams: { [key: string]: string | string[] | undefined };
@@ -13,26 +12,26 @@ export default async function DragAndDropPage() {
   const skills = await getSkills();
 
   // get id , children data only from skills and changes id to string
-  const treeItems: TreeItems = skills.map(({ id, children, skill_name }) => ({
+  const treeItems: TreeItems = skills.map(({ id, children, name }) => ({
     id: id.toString(),
     collapsed: true,
-    children: children.map(({ id, children, skill_name }: any) => ({
+    children: children.map(({ id, children, name }: any) => ({
       id: id.toString(),
       collapsed: true,
-      children: children.map(({ id, children, skill_name }: any) => ({
+      children: children.map(({ id, children, name }: any) => ({
         id: id.toString(),
         collapsed: true,
-        children: children.map(({ id, skill_name }: any) => ({
+        children: children.map(({ id, name }: any) => ({
           id: id.toString(),
-          skill_name,
+          name,
           collapsed: true,
           children: [],
         })),
-        skill_name,
+        name,
       })),
-      skill_name,
+      name,
     })),
-    skill_name,
+    name,
   }));
 
   return (

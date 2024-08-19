@@ -1,3 +1,4 @@
+import { JobPost } from "@/app/jobPost/schema";
 import { NextResponse } from "next/server";
 import postgres from "postgres";
 
@@ -5,20 +6,6 @@ import postgres from "postgres";
 const sql = postgres(process.env.DATABASE_URL || process.env.POSTGRES_URL!, {
   ssl: "allow",
 });
-
-// Define the type for JobPost
-type JobPost = {
-  id: number;
-  job_title: string;
-  wage: number;
-  post_owner: number;
-  post_owner_name: string;
-  show: boolean;
-  description: string;
-  skill_id: number;
-  created_at: string;
-  updated_at: string;
-};
 
 export async function GET(
   request: Request,

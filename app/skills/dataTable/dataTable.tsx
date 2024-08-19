@@ -29,10 +29,6 @@ interface DataTableProps<TData, TValue> {
   closeNextPage: boolean;
 }
 
-function formatSkillName(skill_name: string, level: number): string {
-  return "-".repeat(level) + skill_name;
-}
-
 export function SkillsDataTable<TData, TValue>({
   columns,
   data,
@@ -49,6 +45,10 @@ export function SkillsDataTable<TData, TValue>({
   useEffect(() => {
     // Update key to force re-render when data changes
     setKey((prevKey) => prevKey + 1);
+  }, [data]);
+
+  useEffect(() => {
+    console.log("data", data);
   }, [data]);
 
   const table = useReactTable({
@@ -120,6 +120,14 @@ export function SkillsDataTable<TData, TValue>({
       });
     }
   };
+
+  function formatSkillName(skill_name: string, level: number): string {
+    if (level === 0) {
+      return skill_name;
+    }
+
+    return "-".repeat(level) + skill_name;
+  }
 
   return (
     <div className="rounded-md border">
@@ -207,14 +215,14 @@ export function SkillsDataTable<TData, TValue>({
                             Delete
                           </Button>
                         </>
-                      ) : cell.column.id === "skill_name" ? (
+                      ) : cell.column.id === "name" ? (
                         formatSkillName(
                           (
                             row.original as {
-                              skill_name: string;
+                              name: string;
                               level: number;
                             }
-                          ).skill_name,
+                          ).name,
                           (row.original as { level: number }).level
                         )
                       ) : (

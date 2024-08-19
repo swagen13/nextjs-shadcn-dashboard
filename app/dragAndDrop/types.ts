@@ -2,7 +2,7 @@ import type { MutableRefObject } from "react";
 
 export interface TreeItem {
   id: string;
-  skill_name?: string;
+  name?: string;
   children: TreeItem[];
   collapsed?: boolean;
 }

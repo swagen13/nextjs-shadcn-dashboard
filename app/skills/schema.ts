@@ -1,20 +1,64 @@
 import { z } from "zod";
 
 export const SkillSchema = z.object({
-  skill_name: z.string().min(3, {
-    message: "Name must be at least 3 characters long",
+  id: z.string().uuid().optional(), // UUID as a string, optional if not provided
+  name: z.string().min(1, {
+    message: "Name is required",
   }),
-  parent_id: z.string(),
-  sequence: z.string(),
+  color: z.string().max(50).optional(), // Optional field
+  description: z.string().optional(), // Optional field
+  icon: z.string().optional(), // Optional field
+  parent_id: z.string(), // UUID as a string or null
+  sequence: z.number().int().optional(), // Optional integer field
+  slug: z.string().optional(), // Optional field
+  translations: z
+    .array(
+      z.object({
+        locale: z.string(),
+        name: z.string(),
+      })
+    )
+    .optional(), // Optional array of translations
+  created_at: z.string().optional(), // Timestamp field
+  updated_at: z.string().optional(), // Timestamp field
 });
-
 export type SkillSchemaType = z.infer<typeof SkillSchema>;
 
 export const EditSkillSchema = z.object({
-  id: z.string(),
-  skill_name: z.string().min(3, {
-    message: "Name must be at least 3 characters long",
+  id: z.string().uuid().optional(), // UUID as a string, optional if not provided
+  name: z.string().min(1, {
+    message: "Name is required",
   }),
+  color: z.string().max(50).optional(), // Optional field
+  description: z.string().optional(), // Optional field
+  icon: z.string().optional(), // Optional field
+  parent_id: z.string(), // UUID as a string or null
+  sequence: z.number().int().optional(), // Optional integer field
+  slug: z.string().optional(), // Optional field
+  translations: z
+    .array(
+      z.object({
+        locale: z.string(),
+        name: z.string(),
+      })
+    )
+    .optional(), // Optional array of translations
+  created_at: z.string().optional(), // Timestamp field
+  updated_at: z.string().optional(), // Timestamp field
 });
 
 export type EditSkillSchemaType = z.infer<typeof EditSkillSchema>;
+
+export interface SkillData {
+  id: string | null;
+  name: string;
+  color: string | null;
+  description: string | null;
+  icon: string | null;
+  parent_id: string | null;
+  sequence: string | null;
+  slug: string;
+  translations: { locale: string; name: string }[];
+  level?: number; // Optional, if it might not always be present
+  [key: string]: any; // Allow other properties to exist
+}

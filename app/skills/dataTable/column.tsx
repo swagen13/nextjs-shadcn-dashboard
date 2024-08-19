@@ -5,12 +5,16 @@ import { ColumnDef } from "@tanstack/react-table";
 
 export const skillsColumns: ColumnDef<any>[] = [
   {
-    accessorKey: "skill_name",
+    accessorKey: "name",
     header: "Name",
   },
   {
     accessorKey: "parent_id",
     header: "Parent ID",
+  },
+  {
+    accessorKey: "level",
+    header: "Level",
   },
   {
     accessorKey: "actions",

@@ -28,7 +28,7 @@ export async function GET(
       SELECT
         *
       FROM
-        skillstest
+        skills
       WHERE
         id = ${id};
     `;

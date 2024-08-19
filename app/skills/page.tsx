@@ -32,11 +32,14 @@ export default async function SkillsPage({ searchParams }: SkillsPageProps) {
 
   if (skills.length !== limitParam + 1) {
     close = true;
-    // remove the last index from the skills array
-    skills.pop();
+    if (skills.length < limitParam) {
+      skills.pop();
+    }
   } else {
     close = false;
-    skills.pop();
+    if (skills.length < limitParam) {
+      skills.pop();
+    }
   }
 
   return (

@@ -17,17 +17,19 @@ export async function POST(request: Request) {
 
   try {
     // Perform the update if the job post exists
-    await sql`
-      UPDATE JobPosts
-      SET
-        description = ${description},
-        show = ${show},
-        job_title = ${job_title},
-        wage = ${wage},
-        post_owner = ${post_owner},
-        skill_id = ${skill_id}
-      WHERE id = ${id};
-    `;
+    // await sql`
+    //   UPDATE JobPosts
+    //   SET
+    //     description = ${description},
+    //     show = ${show},
+    //     job_title = ${job_title},
+    //     wage = ${wage},
+    //     post_owner = ${post_owner},
+    //     skill_id = ${skill_id}
+    //   WHERE id = ${id};
+    // `;
+
+    console.log("formData", formData);
 
     return NextResponse.json(
       { message: "Job post updated successfully" },

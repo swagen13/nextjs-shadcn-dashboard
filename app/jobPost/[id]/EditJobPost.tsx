@@ -22,6 +22,7 @@ import { useForm } from "react-hook-form";
 import { editJobPost } from "../action";
 import { EditJobPostSchema, EditJobPostSchemaType } from "../schema";
 import { editor, PlateEditor } from "./PlateEditor";
+import Swal from "sweetalert2";
 
 const initialState = {
   message: "",
@@ -192,7 +193,22 @@ export default function EditJobPostForm({
       }
 
       const responseData = await response.json();
-      console.log("Success:", responseData);
+      // if response is successful, display the sweet alert message
+      if (responseData.message) {
+        Swal.fire({
+          title: "Success",
+          text: responseData.message,
+          icon: "success",
+          confirmButtonText: "Ok",
+        });
+      } else {
+        Swal.fire({
+          title: "Error",
+          text: "An error occurred while updating the job post",
+          icon: "error",
+          confirmButtonText: "Ok",
+        });
+      }
     } catch (error) {
       console.error("Error:", error);
     }

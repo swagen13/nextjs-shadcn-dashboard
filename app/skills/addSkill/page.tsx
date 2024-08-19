@@ -1,8 +1,10 @@
-import { getSkills } from "@/app/dragAndDrop/action";
+import { getAllSkills } from "../action";
 import AddSkillForm from "./AddSkillForm";
 
 export default async function AddSkillFormPage() {
-  const skills = await getSkills();
+  const skills = await getAllSkills();
+
+  console.log("skills", skills);
 
   return (
     <div className="bg-gray-200 rounded-lg p-6 m-4">
