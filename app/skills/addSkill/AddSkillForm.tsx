@@ -18,6 +18,8 @@ import { addSkill } from "../action";
 import { SkillData, SkillSchema, SkillSchemaType } from "../schema";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
+import { put } from "@vercel/blob";
+import { BsXCircleFill } from "react-icons/bs";
 
 const initialState = {
   message: "",
@@ -49,6 +51,12 @@ export default function AddSkillForm({ skills }: AddSkillFormProps) {
   const [state, formAction] = useFormState(addSkill, initialState);
   const [color, setColor] = useColor("#561ecb");
   const router = useRouter();
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [iconPreview, setIconPreview] = useState<string | null>(null);
+
+  const defaultImageUrl = "/no_photo_icon.jpg";
 
   const form = useForm<SkillSchemaType>({
     resolver: zodResolver(SkillSchema),
@@ -59,6 +67,7 @@ export default function AddSkillForm({ skills }: AddSkillFormProps) {
       icon: "",
       parent_id: "",
       sequence: 1,
+      skill_image: "",
       slug: "",
       translations: [],
       created_at: new Date().toISOString(),
@@ -79,8 +88,8 @@ export default function AddSkillForm({ skills }: AddSkillFormProps) {
           title: state.message,
           icon: "success",
         });
-        reset();
-        router.push(`/skills`);
+        // reset();
+        // router.push(`/skills`);
       } else {
         Swal.fire({
           title: state.message,
@@ -221,6 +230,97 @@ export default function AddSkillForm({ skills }: AddSkillFormProps) {
     );
   }
 
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+
+      // Create URL for preview
+      const previewUrl = URL.createObjectURL(file);
+      setPreviewUrl(previewUrl);
+      // Set preview URL to the form field if needed
+      setValue("skill_image", previewUrl);
+    }
+  };
+
+  const handleIconChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const resizedImage = await resizeImage(file, 200, 200);
+      console.log("Resized Image", resizedImage);
+      const url = URL.createObjectURL(resizedImage);
+      setValue("icon", url);
+      setIconPreview(url);
+    }
+  };
+
+  const resizeImage = (
+    file: File,
+    width: number,
+    height: number
+  ): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        img.src = reader.result as string;
+      };
+
+      reader.readAsDataURL(file);
+
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error("Failed to create blob"));
+            }
+          }, file.type);
+        } else {
+          reject(new Error("Failed to get canvas context"));
+        }
+      };
+
+      img.onerror = () => {
+        reject(new Error("Failed to load image"));
+      };
+    });
+  };
+
+  const handleRemoveImage = () => {
+    setPreviewUrl(""); // Reset the preview URL
+    setSelectedImage(null); // Reset the selected image
+    setValue("skill_image", ""); // Reset the form field value
+    // set image input placeholder
+    const input = formRef.current?.querySelector(
+      'input[name="skill_image"]'
+    ) as HTMLInputElement;
+    if (input) {
+      input.value = "";
+    }
+  };
+
+  const handleRemoveIcon = () => {
+    setIconPreview(""); // Reset the preview URL
+    setValue("icon", ""); // Reset the form field value
+    // set icon input placeholder
+    const input = formRef.current?.querySelector(
+      'input[name="icon"]'
+    ) as HTMLInputElement;
+    if (input) {
+      input.value = "";
+    }
+  };
+
   return (
     <Form {...form}>
       <form
@@ -229,162 +329,254 @@ export default function AddSkillForm({ skills }: AddSkillFormProps) {
         ref={formRef}
       >
         <div className="flex flex-col gap-6">
-          {/* Top Grid with 3 columns */}
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-            <FormField
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Name" {...field} className="w-full" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="parent_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Parent Skill</FormLabel>
-                  <FormControl>
-                    <select
-                      {...field}
-                      onChange={(e) => handleParentIdChange(e)}
-                      className="p-2 border rounded-md w-full"
-                    >
-                      <option value="">No parent</option>
-                      {flattenedSkills
-                        .filter((skill) => skill.id !== null)
-                        .map((skill) => (
-                          <option
-                            key={skill.id!.toString()}
-                            value={skill.id!.toString()}
-                          >
-                            {formatSkillName(skill.name, skill.level ?? 0)}
-                          </option>
-                        ))}
-                    </select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="icon"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Icon URL</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Icon URL"
-                      {...field}
-                      className="w-full"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="slug"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Slug</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Slug" {...field} className="w-full" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          {/* Main content area with fields */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-3">
+            {/* Main form fields */}
             <div className="md:col-span-2">
-              {translations.map((translation, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-1 gap-6 md:grid-cols-2"
-                >
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                <div className="md:col-span-2 lg:col-span-2">
                   <FormField
-                    name={`translations.${index}.locale`}
+                    name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm md:text-md">
-                          Translations Locale
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Locale"
-                            {...field}
-                            className="w-full"
-                            value={translation.locale}
-                            onChange={(e) =>
-                              handleTranslationChange(
-                                index,
-                                "locale",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    name={`translations.${index}.name`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm md:text-md">
-                          Translations Name
-                        </FormLabel>
+                        <FormLabel>Name</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="Name"
                             {...field}
                             className="w-full"
-                            value={translation.name}
-                            onChange={(e) =>
-                              handleTranslationChange(
-                                index,
-                                "name",
-                                e.target.value
-                              )
-                            }
                           />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-              ))}
-            </div>
-            <FormField
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <textarea
-                      placeholder="Description"
-                      {...field}
-                      className="p-2 border rounded-md w-full"
-                      rows={6}
+                <FormField
+                  name="parent_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Parent Skill</FormLabel>
+                      <FormControl>
+                        <select
+                          {...field}
+                          onChange={(e) => handleParentIdChange(e)}
+                          className="p-2 border rounded-md w-full"
+                        >
+                          <option value="">No parent</option>
+                          {flattenedSkills
+                            .filter((skill) => skill.id !== null)
+                            .map((skill) => (
+                              <option
+                                key={skill.id!.toString()}
+                                value={skill.id!.toString()}
+                              >
+                                {formatSkillName(skill.name, skill.level ?? 0)}
+                              </option>
+                            ))}
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Slug</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Slug"
+                          {...field}
+                          className="w-full"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="md:col-span-4">
+                  {translations.map((translation, index) => (
+                    <div
+                      key={index}
+                      className="grid grid-cols-1 gap-6 md:grid-cols-2"
+                    >
+                      <FormField
+                        name={`translations.${index}.locale`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm md:text-md">
+                              Translations Locale
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Locale"
+                                {...field}
+                                className="w-full"
+                                value={translation.locale}
+                                onChange={(e) =>
+                                  handleTranslationChange(
+                                    index,
+                                    "locale",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        name={`translations.${index}.name`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm md:text-md">
+                              Translations Name
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Name"
+                                {...field}
+                                className="w-full"
+                                value={translation.name}
+                                onChange={(e) =>
+                                  handleTranslationChange(
+                                    index,
+                                    "name",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="md:col-span-2 lg:col-span-2">
+                  <FormField
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <textarea
+                            placeholder="Description"
+                            {...field}
+                            className="p-2 border rounded-md w-full"
+                            rows={6}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="md:col-span-2 lg:col-span-2">
+                  <FormField
+                    name="color"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Color</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Color"
+                            {...field}
+                            className="w-full"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="mt-2">
+                    <ColorPicker
+                      color={color}
+                      onChange={(color) => {
+                        setColor(color);
+                        handleColorChange(color.hex);
+                      }}
+                      hideAlpha
+                      hideInput
+                      height={60}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div>
+                  </div>
+                </div>
+                <FormField
+                  name="icon"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Upload Icon</FormLabel>
+                      <FormControl>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => {
+                            field.onChange(event);
+                            handleIconChange(event);
+                          }}
+                          name={field.name}
+                          ref={field.ref}
+                          className="w-full"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Preview Icon */}
+                <div className="relative mt-4">
+                  {iconPreview ? (
+                    <>
+                      <img
+                        src={iconPreview}
+                        alt="Icon Preview"
+                        width={200}
+                        height={200}
+                        className="object-cover"
+                      />
+                      <button
+                        onClick={handleRemoveIcon}
+                        className="absolute -top-2 -right-2 text-red-600 rounded-full hover:text-red-300"
+                      >
+                        <BsXCircleFill className="text-xl" />{" "}
+                        {/* ขยายขนาดไอคอนตามต้องการ */}
+                      </button>
+                    </>
+                  ) : (
+                    <img
+                      src="/no_photo_icon.jpg" // Path to your default image
+                      alt="No Photo"
+                      width={200}
+                      height={200}
+                      className="object-cover"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Image upload and preview */}
+            <div className="lg:col-span-1 flex flex-col items-end">
               <FormField
-                name="color"
+                name="skill_image"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Color</FormLabel>
+                    <FormLabel>Upload Image</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Color"
-                        {...field}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => {
+                          field.onChange(event);
+                          handleImageChange(event);
+                        }}
+                        name={field.name}
+                        ref={field.ref}
                         className="w-full"
                       />
                     </FormControl>
@@ -392,36 +584,63 @@ export default function AddSkillForm({ skills }: AddSkillFormProps) {
                   </FormItem>
                 )}
               />
-              <div className="hidden">
-                <FormField
-                  name="sequence"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Color</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={sequence} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
 
-              <div className=" mt-2 ">
-                <ColorPicker
-                  color={color}
-                  onChange={(color) => {
-                    setColor(color);
-                    handleColorChange(color.hex);
-                  }}
-                  hideAlpha
-                  hideInput
-                  height={60}
-                />
+              <div className="relative mt-4 w-full">
+                {previewUrl ? (
+                  <>
+                    <img
+                      src={previewUrl}
+                      alt="Icon Preview"
+                      className="w-full h-auto object-cover"
+                    />
+                    <button
+                      onClick={handleRemoveImage}
+                      className="absolute -top-2 -right-2 text-red-600 rounded-full hover:text-red-300"
+                    >
+                      <BsXCircleFill className="text-2xl" />{" "}
+                    </button>
+                  </>
+                ) : (
+                  <img
+                    src="/no_photo_icon.jpg" // Path to your default image
+                    alt="No Photo"
+                    className="w-full h-auto object-cover"
+                  />
+                )}
               </div>
             </div>
+
+            <div className="hidden">
+              <FormField
+                name="sequence"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Color</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="hidden">
+              <FormField
+                name="id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
+          {/* Color Picker and additional fields */}
         </div>
+
         <div className="px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
           <SubmitButton />
         </div>

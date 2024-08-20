@@ -1,4 +1,5 @@
 "use server";
+import { put } from "@vercel/blob";
 import { EditSkillSchema, SkillData, SkillSchema } from "./schema";
 
 // postgres connection
@@ -133,6 +134,12 @@ export async function addSkill(prevState: any, formData: FormData) {
 
   console.log("formDataObj", formDataObj);
 
+  // Extract the File object for the image
+  const skillImageFile = formData.get("skill_image") as File;
+
+  // Extract the File object for the icon
+  const iconFile = formData.get("icon") as File;
+
   // Convert necessary fields
   const parsedData = {
     sequence: formDataObj.sequence
@@ -178,12 +185,13 @@ export async function addSkill(prevState: any, formData: FormData) {
     sequence: formDataObj.sequence?.toString() || "",
     slug: formDataObj.slug as string,
     translations,
+    skill_image: formDataObj.skill_image as string | null,
   };
 
   console.log("data", data);
 
   try {
-    // Insert the skill data into the database
+    // Step 1: Insert skill data into the database
     const skillIdResult = await sql`
       INSERT INTO skills (
         name,
@@ -210,13 +218,69 @@ export async function addSkill(prevState: any, formData: FormData) {
     `;
     const skillId = skillIdResult[0].id;
 
-    // Insert the related translations into the database
-    if (translations.length > 0) {
-      await sql`
-        INSERT INTO skill_translations (skill_id, locale, name)
-        VALUES ${sql(translations.map((t) => [skillId, t.locale, t.name]))};
-      `;
+    // Update skill ID in the data object
+    data.id = skillId;
+
+    // Step 2: Prepare translations for insertion
+    const translationInserts = translations.map((t) => [
+      skillId,
+      t.locale,
+      t.name,
+    ]);
+
+    // Create a list of upload promises
+    const uploadPromises = [];
+
+    // Step 3: If skill_image is provided, prepare for upload
+    if (skillImageFile && skillImageFile instanceof File) {
+      // Create a folder for the image based on skill ID
+      const imageFolder = `${skillId}`;
+      uploadPromises.push(
+        uploadImage(skillImageFile, imageFolder).then((imageUrl) => {
+          if (imageUrl) {
+            // Update the skill with the image URL
+            return sql`
+            UPDATE skills
+            SET skill_image = ${imageUrl}
+            WHERE id = ${skillId};
+          `.then(() => {
+              // Update the data object with the image URL
+              data.skill_image = imageUrl;
+            });
+          }
+        })
+      );
     }
+
+    // Step 4: If icon is provided, prepare for upload
+    if (iconFile && iconFile instanceof File) {
+      // Create a folder for the icon based on skill ID
+      const iconFolder = `${skillId}/icons`;
+      uploadPromises.push(
+        uploadImage(iconFile, iconFolder).then((iconUrl) => {
+          if (iconUrl) {
+            // Update the skill with the icon URL
+            return sql`
+            UPDATE skills
+            SET icon = ${iconUrl}
+            WHERE id = ${skillId};
+          `.then(() => {
+              // Update the data object with the icon URL
+              data.icon = iconUrl;
+            });
+          }
+        })
+      );
+    }
+
+    // Step 5: Insert translations into the database
+    const translationPromise = sql`
+      INSERT INTO skill_translations (skill_id, locale, name)
+      VALUES ${sql(translationInserts)};
+    `;
+
+    // Wait for all promises to complete
+    await Promise.all([translationPromise, ...uploadPromises]);
 
     return { message: "Skill created successfully", status: true };
   } catch (error) {
@@ -270,6 +334,7 @@ export async function getSkillById(id: string) {
         color: result[0].color,
         description: result[0].description,
         icon: result[0].icon,
+        skill_image: result[0].skill_image,
         parent_id: result[0].parent_id,
         sequence: result[0].sequence,
         slug: result[0].slug,
@@ -278,6 +343,7 @@ export async function getSkillById(id: string) {
           name: row.translation_name,
         })),
       };
+      console.log("skillData", skillData);
 
       return skillData;
     } else {
@@ -296,10 +362,16 @@ export async function updateSkill(prevState: any, formData: FormData) {
 
   console.log("formDataObj", formDataObj);
 
+  // Extract the File object for the image
+  const skillImageFile = formData.get("skill_image") as File;
+
+  // Extract the File object for the icon
+  const iconFile = formData.get("icon") as File;
+
   // Convert necessary fields
   const parsedData = {
     sequence: formDataObj.sequence
-      ? parseInt(formDataObj.sequence as string, 10)
+      ? parseFloat(formDataObj.sequence as string)
       : null,
   };
 
@@ -325,53 +397,98 @@ export async function updateSkill(prevState: any, formData: FormData) {
     description: formDataObj.description as string | null,
     icon: formDataObj.icon as string | null,
     parent_id: formDataObj.parent_id as string | null,
-    sequence: parsedData.sequence?.toString() || "",
+    sequence: formDataObj.sequence?.toString() || "",
     slug: formDataObj.slug as string,
     translations,
+    skill_image: formDataObj.skill_image as string | null,
   };
 
   console.log("data", data);
 
-  const updatedat = new Date();
-
   try {
-    // Update the skill data in the database
+    // Step 1: Update skill data in the database
     await sql`
-      UPDATE
-        skills
+      UPDATE skills
       SET
         name = ${data.name},
         color = ${data.color},
         description = ${data.description},
-        icon = ${data.icon},
         parent_id = ${data.parent_id},
         sequence = ${data.sequence},
         slug = ${data.slug},
-        updated_at = ${updatedat}
-      WHERE
-        id = ${data.id};
+        updated_at = ${new Date().toISOString()}
+      WHERE id = ${data.id};
     `;
 
-    // Delete existing translations
-    await sql`
-      DELETE FROM
-        skill_translations
-      WHERE
-        skill_id = ${data.id};
-    `;
+    // Step 2: Prepare translations for insertion
+    const translationInserts = translations.map((t) => [
+      data.id,
+      t.locale,
+      t.name,
+    ]);
 
-    // Insert the related translations into the database
-    if (translations.length > 0) {
-      await sql`
-        INSERT INTO skill_translations (skill_id, locale, name)
-        VALUES ${sql(translations.map((t) => [data.id, t.locale, t.name]))};
-      `;
+    // Create a list of upload promises
+    const uploadPromises = [];
+
+    // Step 3: If skill_image is provided, prepare for upload
+    if (skillImageFile.size > 0 && skillImageFile instanceof File) {
+      // Create a folder for the image based on skill ID
+      const imageFolder = `${data.id}`;
+      uploadPromises.push(
+        uploadImage(skillImageFile, imageFolder).then((imageUrl) => {
+          if (imageUrl) {
+            // Update the skill with the image URL
+            return sql`
+            UPDATE skills
+            SET skill_image = ${imageUrl}
+            WHERE id = ${data.id};
+          `.then(() => {
+              // Update the data object with the image URL
+              data.skill_image = imageUrl;
+            });
+          }
+        })
+      );
     }
+
+    // Step 4: If icon is provided, prepare for upload
+    if (iconFile.size > 0 && iconFile instanceof File) {
+      // Create a folder for the icon based on skill ID
+      const iconFolder = `${data.id}/icons`;
+      uploadPromises.push(
+        uploadImage(iconFile, iconFolder).then((iconUrl) => {
+          if (iconUrl) {
+            // Update the skill with the icon URL
+            return sql`
+            UPDATE skills
+            SET icon = ${iconUrl}
+            WHERE id = ${data.id};
+          `.then(() => {
+              // Update the data object with the icon URL
+              data.icon = iconUrl;
+            });
+          }
+        })
+      );
+    }
+
+    // Step 5: Update translations in the database
+    await sql`
+      DELETE FROM skill_translations WHERE skill_id = ${data.id};
+    `;
+
+    const translationPromise = sql`
+      INSERT INTO skill_translations (skill_id, locale, name)
+      VALUES ${sql(translationInserts)};
+    `;
+
+    // Wait for all promises to complete
+    await Promise.all([translationPromise, ...uploadPromises]);
 
     return { message: "Skill updated successfully", status: true };
   } catch (error) {
     console.error("Error updating skill:", error);
-    return { message: "Error updating skill" };
+    return { message: "Error updating skill", status: false };
   }
 }
 
@@ -472,4 +589,26 @@ function transformToSkillData(rawData: any[]): SkillData[] {
     translations: item.translations || [],
     level: item.level || 0, // Default or calculate if needed
   }));
+}
+
+// upload image to vercel blob
+export async function uploadImage(file: File, folder: string) {
+  try {
+    // Upload the image buffer to the server
+    const imageBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(imageBuffer);
+
+    // Upload the image to Vercel Blob
+    const response = await put(`skill-image/${folder}/${file.name}`, buffer, {
+      access: "public",
+      token: "vercel_blob_rw_d0shhpZLmtvsciZy_E4yCTlGweo2ZfNrkiAoYbk7D2tYe12",
+      contentType: file.type,
+    });
+
+    if (response.url) {
+      return response.url;
+    }
+  } catch (error) {
+    console.error("Image upload failed:", error);
+  }
 }

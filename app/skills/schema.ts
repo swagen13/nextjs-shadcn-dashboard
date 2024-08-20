@@ -11,6 +11,7 @@ export const SkillSchema = z.object({
   parent_id: z.string(), // UUID as a string or null
   sequence: z.number().int().optional(), // Optional integer field
   slug: z.string().optional(), // Optional field
+  skill_image: z.string().optional(), // Optional field for skill image
   translations: z
     .array(
       z.object({
@@ -22,6 +23,7 @@ export const SkillSchema = z.object({
   created_at: z.string().optional(), // Timestamp field
   updated_at: z.string().optional(), // Timestamp field
 });
+
 export type SkillSchemaType = z.infer<typeof SkillSchema>;
 
 export const EditSkillSchema = z.object({
@@ -35,6 +37,7 @@ export const EditSkillSchema = z.object({
   parent_id: z.string(), // UUID as a string or null
   sequence: z.number().int().optional(), // Optional integer field
   slug: z.string().optional(), // Optional field
+  skill_image: z.string().optional(), // Optional field for skill image
   translations: z
     .array(
       z.object({
@@ -60,5 +63,6 @@ export interface SkillData {
   slug: string;
   translations: { locale: string; name: string }[];
   level?: number; // Optional, if it might not always be present
+  skill_image?: string | null; // Optional field for skill image
   [key: string]: any; // Allow other properties to exist
 }
