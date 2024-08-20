@@ -4,8 +4,6 @@ import AddSkillForm from "./AddSkillForm";
 export default async function AddSkillFormPage() {
   const skills = await getAllSkills();
 
-  console.log("skills", skills);
-
   return (
     <div className="bg-gray-200 rounded-lg p-6 m-4">
       <div className="flex flex-row justify-between">
