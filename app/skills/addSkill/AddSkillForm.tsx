@@ -88,8 +88,8 @@ export default function AddSkillForm({ skills }: AddSkillFormProps) {
           title: state.message,
           icon: "success",
         });
-        // reset();
-        // router.push(`/skills`);
+        reset();
+        router.push(`/skills`);
       } else {
         Swal.fire({
           title: state.message,

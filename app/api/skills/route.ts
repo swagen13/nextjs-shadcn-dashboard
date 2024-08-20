@@ -21,7 +21,7 @@ interface SkillData {
   [key: string]: any; // Allow other properties to exist
 }
 
-// Define the type for skill records
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
