@@ -44,7 +44,9 @@ export async function GET(request: Request) {
             )
           END AS level
         FROM
-          skills   
+          skills
+        WHERE 
+          parent_id IS NULL OR parent_id = ''
         UNION ALL
         SELECT
           s.id,
