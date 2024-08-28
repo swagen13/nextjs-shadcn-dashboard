@@ -8,6 +8,8 @@ const sql = postgres(process.env.DATABASE_URL || process.env.POSTGRES_URL!, {
   ssl: "allow",
 });
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   const formData = await request.json();
 
