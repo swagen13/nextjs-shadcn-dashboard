@@ -17,14 +17,14 @@ export async function POST(request: Request) {
   const currentTime = new Date().toISOString(); // Get the current time in ISO format
 
   try {
-    // ตรวจสอบก่อนว่ามีการเลือก job post นี้หรือยัง
+    // check if the job post is already selected by the user
     const existingRow = await sql`
         SELECT * FROM selected_job_posts
         WHERE user_id = ${user_id} AND job_post_id = ${job_post_id}
       `;
 
     if (existingRow.count > 0) {
-      // ถ้ามีอยู่แล้ว ให้ลบแถวที่มีอยู่
+      // if the job post is already selected, delete the row
       await sql`
           DELETE FROM selected_job_posts
           WHERE user_id = ${user_id} AND job_post_id = ${job_post_id}
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         { status: 200 }
       );
     } else {
-      // ถ้าไม่มี ให้เพิ่มแถวใหม่
+      // if the job post is not selected, insert a new row
       await sql`
           INSERT INTO selected_job_posts (user_id, job_post_id, selected_at)
           VALUES (${user_id}, ${job_post_id}, ${currentTime})
@@ -53,4 +53,11 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(request: Request) {
+  return NextResponse.json(
+    { message: "Only POST method is allowed" },
+    { status: 405 }
+  );
 }
