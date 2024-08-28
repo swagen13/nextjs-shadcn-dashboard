@@ -12,24 +12,21 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const formData = await request.json();
-
-  // Destructure the form data
   const { user_id, job_post_id } = formData;
-
-  const currentTime = new Date().toISOString(); // Get the current time in ISO format
+  const currentTime = new Date();
 
   try {
-    // check if the job post is already selected by the user
-    const existingRow = await sql`
-        SELECT * FROM selected_job_posts
-        WHERE user_id = ${user_id} AND job_post_id = ${job_post_id}
-      `;
+    // Check if the job post is already selected by the user
+    const existingRows = await sql`
+    SELECT * FROM selected_job_posts
+    WHERE user_id::varchar = ${user_id.toString()} AND job_post_id::varchar = ${job_post_id.toString()}
+  `;
 
-    if (existingRow.count > 0) {
-      // if the job post is already selected, delete the row
+    if (existingRows.length > 0) {
+      // If the job post is already selected, delete the row
       await sql`
           DELETE FROM selected_job_posts
-          WHERE user_id = ${user_id} AND job_post_id = ${job_post_id}
+          WHERE user_id::varchar = ${user_id.toString()} AND job_post_id::varchar = ${job_post_id.toString()}
         `;
 
       return NextResponse.json(
@@ -37,10 +34,10 @@ export async function POST(request: Request) {
         { status: 200 }
       );
     } else {
-      // if the job post is not selected, insert a new row
+      // If the job post is not selected, insert a new row
       await sql`
           INSERT INTO selected_job_posts (user_id, job_post_id, selected_at)
-          VALUES (${user_id}, ${job_post_id}, ${currentTime})
+          VALUES (${user_id.toString()}, ${job_post_id.toString()}, ${currentTime})
         `;
 
       return NextResponse.json(
@@ -51,7 +48,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error processing job post:", error);
     return NextResponse.json(
-      { message: "Internal Server Error" },
+      { message: "Internal Server Error", error: error },
       { status: 500 }
     );
   }
