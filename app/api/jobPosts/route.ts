@@ -19,10 +19,13 @@ type JobPost = {
   updated_at: string;
 };
 
+export const dynamic = "force-dynamic";
+
 // Handler for GET requests
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const skill_ids = url.searchParams.get("skill_ids");
+  const user_id = url.searchParams.get("user_id"); // Assuming you want to pass user_id as a query parameter
 
   if (skill_ids) {
     // Handle fetching job posts by multiple skill IDs
@@ -40,15 +43,18 @@ export async function GET(request: Request) {
           jp.description,
           jp.skill_id,
           jp.created_at,
-          jp.updated_at
+          jp.updated_at,
+          COALESCE(sjp.job_post_id IS NOT NULL, false) AS is_selected
         FROM
           JobPosts jp
         LEFT JOIN
           users u ON jp.post_owner::integer = u.id
+        LEFT JOIN
+          selected_job_posts sjp ON jp.id::text = sjp.job_post_id AND sjp.user_id = ${user_id}
         WHERE
           jp.skill_id = ANY(${sql.array(skillIdsArray)}::text[])
         GROUP BY
-          jp.id, u.username;
+          jp.id, u.username, sjp.job_post_id;
       `;
 
       return NextResponse.json(result);
@@ -73,13 +79,16 @@ export async function GET(request: Request) {
           jp.description,
           jp.skill_id,
           jp.created_at,
-          jp.updated_at
+          jp.updated_at,
+          COALESCE(sjp.job_post_id IS NOT NULL, false) AS is_selected
         FROM
           JobPosts jp
         LEFT JOIN
           users u ON jp.post_owner::integer = u.id
+        LEFT JOIN
+          selected_job_posts sjp ON jp.id::text = sjp.job_post_id AND sjp.user_id = ${user_id}
         GROUP BY
-          jp.id, u.username;
+          jp.id, u.username, sjp.job_post_id;
       `;
 
       return NextResponse.json(result);
