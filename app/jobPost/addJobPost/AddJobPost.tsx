@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
 import { addJobPost } from "../action";
@@ -54,120 +54,161 @@ function formatSkillName(skill_name: string, level: number): string {
 }
 
 export default function AddJobPostForm({ users, skill }: AddJobPostFormProps) {
+  const [description, setDescription] = useState<any>(null);
+  const [descriptionChanged, setDescriptionChanged] = useState<boolean>(false);
+  const [isChecked, setIsChecked] = useState<boolean>(false);
+  const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
+
   const formRef = useRef<HTMLFormElement>(null);
-  const router = useRouter();
-  const [description, setDescription] = useState([]);
+
+  const defaultValues = {
+    show: "false",
+    job_title: "",
+    wage: "",
+    post_owner: "",
+    description: "",
+    skill_id: "",
+    id: "",
+  };
 
   const form = useForm<JobPostSchemaType>({
     resolver: zodResolver(JobPostSchema),
-    defaultValues: {
-      show: "false",
-      job_title: "",
-      wage: "",
-      post_owner: "",
-    },
+    defaultValues,
   });
 
-  const { handleSubmit, reset, control, formState } = form;
+  useEffect(() => {
+    const convertedValue = convertToSlateValue(defaultValues.description);
+    setDescription(convertedValue);
+  }, []);
+
+  useEffect(() => {
+    if (
+      description &&
+      JSON.stringify(description) !==
+        JSON.stringify(convertToSlateValue(defaultValues.description))
+    ) {
+      setDescriptionChanged(true);
+    } else {
+      setDescriptionChanged(false);
+    }
+  }, [description, defaultValues.description]);
+
+  // Function to handle description changes
+  const handleDescriptionChange = (newDescription: any) => {
+    setDescription(newDescription);
+  };
+
+  useEffect(() => {
+    const subscription = form.watch((value: Record<string, any>) => {
+      const hasChanges = (
+        Object.keys(defaultValues) as (keyof typeof defaultValues)[]
+      ).some((key) => value[key] !== defaultValues[key]);
+
+      if (hasChanges) {
+        setIsSubmitDisabled(false);
+      } else {
+        setIsSubmitDisabled(true);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form, defaultValues]);
+
+  useEffect(() => {
+    if (descriptionChanged) {
+      setIsSubmitDisabled(false);
+    }
+  }, [descriptionChanged]);
+
+  useEffect(() => {
+    setIsChecked(defaultValues.show === "true");
+  }, [defaultValues.show]);
+
+  const { reset, control, formState } = form;
 
   const { isSubmitting, errors } = formState;
 
   const flattenedSkills = flattenSkills(skill);
 
-  const onSubmit = handleSubmit(async (data: any) => {
-    const adjustedNodes = adjustNodes(description);
-    const serializedHtml = serializeEditorContent(editor, adjustedNodes);
+  const convertToSlateValue = (html: string) => {
+    const convertedValue = deserializeHtml(editor, {
+      element: html,
+    }) as (TElement | TText)[];
 
-    const jobPostData = {
-      ...data,
-      description: serializedHtml,
+    const result: TElement[] = [];
+    let currentParagraph: TElement = { type: "p", children: [] };
+
+    convertedValue.forEach((node) => {
+      if ((node as TElement).type === "br") {
+        currentParagraph.children.push({ text: "\n" } as TText);
+      } else {
+        currentParagraph.children.push(node);
+      }
+    });
+
+    if (currentParagraph.children.length > 0) {
+      result.push(currentParagraph);
+    }
+
+    return result;
+  };
+
+  const onSubmit = async (data: any) => {
+    // Serialize the HTML from your editor
+    const serializedHtml = serializeHtml(editor, {
+      nodes: description, // Assuming 'description' is the editor's state
+      dndWrapper: (props) => <DndProvider backend={HTML5Backend} {...props} />,
+      convertNewLinesToHtmlBr: true,
+      stripWhitespace: false,
+    });
+
+    // Create a JSON object to send
+    const jsonData = {
+      ...data, // Add other form data (e.g., title, category, etc.)
+      description: serializedHtml, // Add the serialized HTML to the JSON
     };
 
-    console.log("jobPostData", jobPostData);
-
-    const response = await addJobPost(jobPostData);
-
-    if (response.status) {
-      Swal.fire({
-        title: response.message,
-        icon: "success",
-      }).then(() => {
-        router.push("/jobPost"); // Redirect to /jobPost
+    console.log("JSON Data to send:", jsonData);
+    try {
+      const response = await fetch("/api/jobPosts/edit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(jsonData), // Convert JSON object to string
       });
-    } else {
-      Swal.fire({
-        title: response.message,
-        icon: "error",
-      });
-    }
-  });
 
-  const deserializeEditorContent = (editor: any, html: string) => {
-    const domParser = new DOMParser();
-    const document = domParser.parseFromString(html, "text/html");
-    const elements = Array.from(document.body.childNodes);
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
 
-    return elements.map((element: any) => {
-      const dataKey = element
-        .querySelector("[data-key]")
-        ?.getAttribute("data-key");
-      const textContent = element.textContent || "";
-
-      return {
-        type: "p",
-        children: [{ text: textContent }],
-        id: dataKey || null,
-      };
-    });
-  };
-
-  const serializeEditorContent = (editor: any, nodes: any[]) => {
-    const nodesWithId = nodes.map((node, index) => ({
-      ...node,
-      id: node.id || index.toString(),
-    }));
-
-    const adjustedNodes = nodesWithId.map((node) => {
-      if (node.children && node.children.length > 0) {
-        node.children = node.children.map((child: { text: string }) => {
-          if (child.text && child.text.includes("\n")) {
-            child.text = child.text.replace(/\n/g, "<br />");
-          }
-          return child;
+      const responseData = await response.json();
+      // if response is successful, display the sweet alert message
+      if (responseData.message) {
+        Swal.fire({
+          title: "Success",
+          text: responseData.message,
+          icon: "success",
+          confirmButtonText: "Ok",
+        });
+      } else {
+        Swal.fire({
+          title: "Error",
+          text: "An error occurred while updating the job post",
+          icon: "error",
+          confirmButtonText: "Ok",
         });
       }
-      return node;
-    });
-
-    return serializeHtml(editor, {
-      nodes: adjustedNodes,
-      dndWrapper: (props) => <DndProvider backend={HTML5Backend} {...props} />,
-      convertNewLinesToHtmlBr: false, // Ensure new lines are converted to <br />
-    });
-  };
-
-  const adjustNodes = (nodes: TElement[]) => {
-    const adjustedNodes: TElement[] = [];
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
-      if (node.children.length === 1 && node.children[0].text === "") {
-        if (i > 0) {
-          const prevNode = adjustedNodes[adjustedNodes.length - 1];
-          if (prevNode && prevNode.children.length > 0) {
-            prevNode.children[prevNode.children.length - 1].text += "\n";
-          }
-        }
-      } else {
-        adjustedNodes.push(node);
-      }
+    } catch (error) {
+      console.error("Error:", error);
     }
-    return adjustedNodes;
   };
 
   return (
     <Form {...form}>
       <form
-        onSubmit={onSubmit}
+        // action={formAction}
+        onSubmit={form.handleSubmit(onSubmit)}
         className="flex flex-col space-y-4"
         ref={formRef}
       >
@@ -205,7 +246,7 @@ export default function AddJobPostForm({ users, skill }: AddJobPostFormProps) {
                         className="p-2 border rounded-md w-full"
                       >
                         <option value="">Select Post Owner</option>
-                        {users.map((user) => (
+                        {users.map((user: any) => (
                           <option key={user.id} value={user.id}>
                             {user.username}
                           </option>
@@ -217,7 +258,8 @@ export default function AddJobPostForm({ users, skill }: AddJobPostFormProps) {
                 )}
               />
             </div>
-            <div className="w-3/12">
+
+            <div className="w-3/12 mr-4">
               <FormField
                 control={form.control}
                 name="wage"
@@ -228,6 +270,27 @@ export default function AddJobPostForm({ users, skill }: AddJobPostFormProps) {
                       <Input
                         placeholder="Wage"
                         {...field}
+                        className="p-2 border rounded-md w-full"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="w-3/12 mr-4">
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <textarea
+                        placeholder="description"
+                        {...field}
+                        value={field.value}
+                        // onChange={(e) => setDescription(e.target.value)}
                         className="p-2 border rounded-md w-full"
                       />
                     </FormControl>
@@ -253,7 +316,7 @@ export default function AddJobPostForm({ users, skill }: AddJobPostFormProps) {
                         <option value="">No Skill</option>
                         {flattenedSkills.map((skill) => (
                           <option key={skill.id} value={skill.id.toString()}>
-                            {formatSkillName(skill.skill_name, skill.level)}
+                            {formatSkillName(skill.name, skill.level)}
                           </option>
                         ))}
                       </select>
@@ -264,33 +327,46 @@ export default function AddJobPostForm({ users, skill }: AddJobPostFormProps) {
               />
             </div>
           </div>
-          <div>
-            Description
-            <PlateEditor initialData={description} onChange={setDescription} />
-          </div>
-          <div className="flex">
-            <div className="">
-              <FormField
-                control={form.control}
-                name={"show"}
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 mt-2 ml-4">
-                    <FormControl>
-                      {/* <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      /> */}
-                    </FormControl>
-                    <FormLabel>Show Post</FormLabel>
-                    <FormMessage />
-                  </FormItem>
-                )}
+
+          {description && (
+            <div>
+              Description
+              <PlateEditor
+                initialData={description}
+                onChange={handleDescriptionChange} // Use the handler here
               />
             </div>
+          )}
+          <div className="flex">
+            <FormField
+              control={form.control}
+              name="show"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 mt-2 ml-4">
+                  <FormControl>
+                    <select
+                      {...field}
+                      value={field.value}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value);
+                      }}
+                      className="p-2 border rounded-md w-full"
+                    >
+                      <option value="false">Hidden</option>
+                      <option value="true">Visible</option>
+                    </select>
+                  </FormControl>
+                  <FormLabel>Show Post</FormLabel>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
           <div className="flex mt-6">
             <Button
               type="submit"
+              disabled={isSubmitDisabled} // Disable button initially
               className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm disabled:opacity-50 mr-4"
             >
               {isSubmitting ? <Spinner size={20} /> : "Add Job Post"}
@@ -298,6 +374,7 @@ export default function AddJobPostForm({ users, skill }: AddJobPostFormProps) {
             <Button
               type="reset"
               className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm disabled:opacity-50"
+              onClick={() => reset(defaultValues)}
             >
               Reset
             </Button>

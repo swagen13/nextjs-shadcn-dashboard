@@ -67,7 +67,7 @@ export async function getSkills() {
 }
 
 // Function to build the skill hierarchy
-function buildSkillHierarchy(skills: any[]) {
+export async function buildSkillHierarchy(skills: any[]) {
   const skillMap = new Map();
   const roots: any[] = [];
 

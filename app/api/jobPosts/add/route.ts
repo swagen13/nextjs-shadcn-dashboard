@@ -12,16 +12,21 @@ export async function POST(request: Request) {
   const formData = await request.json();
 
   // Destructure the form data
-  const { job_title, wage, post_owner, show, description, skill_id } = formData;
-
-  const currentTime = new Date().toISOString(); // Get the current time in ISO format
+  const { description, id, show, job_title, wage, post_owner, skill_id } =
+    formData;
 
   try {
     // Perform the update if the job post exists
     await sql`
-     INSERT INTO jobposts (job_title, wage, post_owner, skill_id, show, description, created_at, updated_at)
-        VALUES (${job_title}, ${wage}, ${post_owner}, ${skill_id}, ${show}, ${description}, ${currentTime}, ${currentTime})
-        RETURNING id;
+      UPDATE JobPosts
+      SET
+        description = ${description},
+        show = ${show},
+        job_title = ${job_title},
+        wage = ${wage},
+        post_owner = ${post_owner},
+        skill_id = ${skill_id}
+      WHERE id = ${id};
     `;
 
     return NextResponse.json(

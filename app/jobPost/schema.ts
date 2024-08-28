@@ -45,9 +45,7 @@ export const JobPostSchema = z.object({
   job_title: z.string().min(1, { message: "Job title is required" }),
   wage: z.string().min(1, { message: "Wage is required" }),
   post_owner: z.string().min(1, { message: "Post owner is required" }),
-  description: z
-    .array(JobPostDescriptionSchema)
-    .nonempty({ message: "At least one description is required" }), // updated to match jsonb type
+  description: z.any(),
   skill_id: z.string().min(1, { message: "Skill ID is required" }), // updated to match character varying type
 });
 

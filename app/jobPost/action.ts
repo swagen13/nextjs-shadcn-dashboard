@@ -3,6 +3,7 @@
 // postgres connection
 import postgres from "postgres";
 import { EditJobPostSchema, JobPostSchema } from "./schema";
+import { SkillData } from "../skills/schema";
 let sql = postgres(process.env.DATABASE_URL || process.env.POSTGRES_URL!, {
   ssl: "allow",
 });
@@ -281,4 +282,79 @@ export async function deletePostJob(postId: number) {
       status: false,
     };
   }
+}
+
+export async function getAllSkills() {
+  try {
+    const result = await sql`
+  WITH RECURSIVE SkillHierarchy AS (
+          SELECT
+            id,
+            name,
+            parent_id,
+            sequence,
+            CASE
+              WHEN parent_id IS NULL OR parent_id = '' THEN 0
+              ELSE COALESCE(
+                LENGTH(sequence) - LENGTH(REPLACE(sequence, '.', '')) - 1, 
+                0
+              )
+            END AS level
+          FROM
+            skills
+          WHERE 
+            parent_id IS NULL OR parent_id = ''
+          UNION ALL
+          SELECT
+            s.id,
+            s.name,
+            s.parent_id,
+            s.sequence,
+            sh.level + 1 AS level
+          FROM
+            skills s
+          INNER JOIN SkillHierarchy sh ON s.parent_id = sh.id
+        )
+        SELECT
+          sh.id,
+          sh.name,
+          sh.parent_id,
+          sh.sequence,
+          sh.level,
+          st.locale,
+          st.name as translation_name
+        FROM
+          SkillHierarchy sh
+        LEFT JOIN
+          skill_translations st
+        ON
+          sh.id = st.skill_id
+        ORDER BY
+          sh.sequence ASC;
+    `;
+
+    // Use this function when processing data
+    const skillData: SkillData[] = transformToSkillData(result);
+    console.log("skillData", skillData);
+
+    return skillData;
+  } catch (error) {
+    console.error("Error fetching skillssss:", error);
+    return [];
+  }
+}
+
+function transformToSkillData(rawData: any[]): SkillData[] {
+  return rawData.map((item) => ({
+    id: item.id || null,
+    name: item.name || "",
+    color: item.color || null,
+    description: item.description || null,
+    icon: item.icon || null,
+    parent_id: item.parent_id || null,
+    sequence: item.sequence || null,
+    slug: item.slug || "",
+    translations: item.translations || [],
+    level: item.level || 0, // Default or calculate if needed
+  }));
 }

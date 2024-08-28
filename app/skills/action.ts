@@ -17,8 +17,7 @@ export async function getSkills(page: number, limit: number, name?: string) {
   try {
     let query;
     if (name && name.trim() !== "") {
-      query = sql`
-        WITH RECURSIVE SkillHierarchy AS (
+      query = sql`WITH RECURSIVE SkillHierarchy AS (
           SELECT
             id,
             name,
@@ -65,11 +64,9 @@ export async function getSkills(page: number, limit: number, name?: string) {
         ORDER BY
           sh.sequence ASC
         LIMIT ${limit + 1}
-        OFFSET ${offset};
-      `;
+        OFFSET ${offset};`;
     } else {
-      query = sql`
-        WITH RECURSIVE SkillHierarchy AS (
+      query = sql`WITH RECURSIVE SkillHierarchy AS (
           SELECT
             id,
             name,
@@ -114,8 +111,7 @@ export async function getSkills(page: number, limit: number, name?: string) {
         ORDER BY
           sh.sequence ASC
         LIMIT ${limit + 1}
-        OFFSET ${offset};
-      `;
+        OFFSET ${offset};`;
     }
 
     const result = await query;
@@ -568,6 +564,7 @@ export async function getAllSkills() {
 
     // Use this function when processing data
     const skillData: SkillData[] = transformToSkillData(result);
+    console.log("skillData", skillData);
 
     return skillData;
   } catch (error) {

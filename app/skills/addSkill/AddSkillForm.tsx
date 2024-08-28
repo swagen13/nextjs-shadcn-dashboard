@@ -52,7 +52,7 @@ export default function AddSkillForm({ skills }: AddSkillFormProps) {
   const [color, setColor] = useColor("#561ecb");
   const router = useRouter();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
 
@@ -88,8 +88,8 @@ export default function AddSkillForm({ skills }: AddSkillFormProps) {
           title: state.message,
           icon: "success",
         });
-        reset();
-        router.push(`/skills`);
+        // reset();
+        // router.push(`/skills`);
       } else {
         Swal.fire({
           title: state.message,
@@ -237,7 +237,7 @@ export default function AddSkillForm({ skills }: AddSkillFormProps) {
 
       // Create URL for preview
       const previewUrl = URL.createObjectURL(file);
-      setPreviewUrl(previewUrl);
+      setImagePreview(previewUrl);
       // Set preview URL to the form field if needed
       setValue("skill_image", previewUrl);
     }
@@ -297,7 +297,7 @@ export default function AddSkillForm({ skills }: AddSkillFormProps) {
   };
 
   const handleRemoveImage = () => {
-    setPreviewUrl(""); // Reset the preview URL
+    setImagePreview(""); // Reset the preview URL
     setSelectedImage(null); // Reset the selected image
     setValue("skill_image", ""); // Reset the form field value
     // set image input placeholder
@@ -586,10 +586,10 @@ export default function AddSkillForm({ skills }: AddSkillFormProps) {
               />
 
               <div className="relative mt-4 w-full">
-                {previewUrl ? (
+                {imagePreview ? (
                   <>
                     <img
-                      src={previewUrl}
+                      src={imagePreview}
                       alt="Icon Preview"
                       className="w-full h-auto object-cover"
                     />

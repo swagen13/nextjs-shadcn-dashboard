@@ -75,7 +75,6 @@ export default function EditJobPostForm({
     skill_id: jobPost[0].skill_id,
   };
 
-  const [state, formAction] = useFormState(editJobPost, initialState);
   const [description, setDescription] = useState<any>(null);
   const [descriptionChanged, setDescriptionChanged] = useState<boolean>(false);
   const [isChecked, setIsChecked] = useState<boolean>(defaultValues.show);
@@ -326,7 +325,7 @@ export default function EditJobPostForm({
                         <option value="">No Skill</option>
                         {flattenedSkills.map((skill) => (
                           <option key={skill.id} value={skill.id.toString()}>
-                            {formatSkillName(skill.skill_name, skill.level)}
+                            {formatSkillName(skill.name, skill.level)}
                           </option>
                         ))}
                       </select>
